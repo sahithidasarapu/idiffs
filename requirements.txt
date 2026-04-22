@@ -1,0 +1,12 @@
+Flask==3.0.2
+Flask-Mail==0.10.0
+
+google-generativeai==0.4.1
+psutil==5.9.8
+requests==2.31.0
+win10toast==0.9
+waitress==3.0.2
+eventlet==0.35.2
+Flask-SocketIO==5.3.6
+scapy==2.5.0
+python-dotenv==1.0.1

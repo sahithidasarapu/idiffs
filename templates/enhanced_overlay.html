@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDIFFS Enhanced — Real-Time Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0b1120;--bg2:#111827;--card:#1a2234;--border:#2a3a54;--text:#e0e8f5;--text2:#7a8fad;--accent:#3b82f6;--danger:#ef4444;--success:#22c55e;--warn:#f59e0b;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+    .top-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px}
+    .top-bar h1{font-size:18px;letter-spacing:2px;color:var(--accent)}
+    .top-bar .live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--success);margin-left:auto}
+    .live-dot{width:8px;height:8px;border-radius:50%;background:var(--success);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+    .top-bar .clock{font-family:var(--mono);font-size:12px;color:var(--text2);padding-left:16px;border-left:1px solid var(--border)}
+    .top-bar .back-btn{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;text-decoration:none}
+    .top-bar .back-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .container{padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .full{grid-column:1/-1}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+    .card-title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .card-title::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px}
+    .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .stat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+    .stat .val{font-family:var(--mono);font-size:24px;font-weight:700}
+    .stat .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+    .stat.danger .val{color:var(--danger)}
+    .stat.success .val{color:var(--success)}
+    .stat.warn .val{color:var(--warn)}
+    .stat.info .val{color:var(--accent)}
+    .btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:500;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{filter:brightness(1.2)}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-success{background:var(--success);color:#fff}
+    input,textarea{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--sans);font-size:13px;width:100%;outline:none}
+    input:focus,textarea:focus{border-color:var(--accent)}
+    .badge{display:inline-flex;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+    .badge-danger{background:rgba(239,68,68,.15);color:var(--danger)}
+    .badge-success{background:rgba(34,197,94,.15);color:var(--success)}
+    .badge-warn{background:rgba(245,158,11,.15);color:var(--warn)}
+    .badge-info{background:rgba(59,130,246,.15);color:var(--accent)}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th{background:var(--bg);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+    td{padding:8px 12px;border-bottom:1px solid rgba(42,58,84,.4);color:var(--text)}
+    tr:hover td{background:rgba(59,130,246,.05)}
+    .mono{font-family:var(--mono);font-size:11px}
+    .progress{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:6px}
+    .progress-fill{height:100%;border-radius:3px;transition:width .6s}
+    .tab-bar{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px}
+    .tab{padding:8px 16px;font-size:12px;color:var(--text2);cursor:pointer;border-radius:6px 6px 0 0;transition:.2s}
+    .tab:hover{color:var(--text);background:var(--bg2)}
+    .tab.active{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600}
+    .panel{display:none}.panel.active{display:block}
+    .threat-row td{background:rgba(239,68,68,.08)!important}
+    .log-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:var(--mono);font-size:11px;color:#7ddc7d;max-height:200px;overflow-y:auto}
+    .qr-section{text-align:center;padding:16px}
+    @media(max-width:900px){.container{grid-template-columns:1fr}.stat-row{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h1>⚡ IDIFFS ENHANCED</h1>
+    <span class="badge badge-info">v3.3.0-RT</span>
+    <div class="live"><div class="live-dot"></div>REAL-TIME ACTIVE</div>
+    <div class="clock" id="clock">--:--:--</div>
+    <a href="/" class="back-btn">← Original Dashboard</a>
+  </div>
+
+  <div class="container">
+    <!-- STATS ROW -->
+    <div class="full stat-row">
+      <div class="stat info"><div class="val" id="s-conn">—</div><div class="lbl">Network Connections</div></div>
+      <div class="stat danger"><div class="val" id="s-threats">0</div><div class="lbl">Active Threats</div></div>
+      <div class="stat success"><div class="val" id="s-cpu">—</div><div class="lbl">CPU Usage</div></div>
+      <div class="stat warn"><div class="val" id="s-ram">—</div><div class="lbl">Memory Usage</div></div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="full">
+      <div class="tab-bar">
+        <div class="tab active" onclick="showTab('network')">🌐 Live Network</div>
+        <div class="tab" onclick="showTab('health')">💻 System Health</div>
+        <div class="tab" onclick="showTab('breach')">🔓 Breach Checker</div>
+        <div class="tab" onclick="showTab('ai')">🤖 Local AI</div>
+        <div class="tab" onclick="showTab('alerts')">🔔 Push Alerts</div>
+        <div class="tab" onclick="showTab('dns')">🔍 DNS Intel</div>
+      </div>
+    </div>
+
+    <!-- NETWORK PANEL -->
+    <div class="full panel active" id="panel-network">
+      <div class="card">
+        <div class="card-title">Live Network Connections — Auto-Refresh 5s</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn btn-primary" onclick="fetchNetwork()">🔄 Scan Now</button>
+          <button class="btn btn-outline" id="auto-toggle" onclick="toggleAutoScan()">⏸ Pause Auto-Scan</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>PID</th><th>Process</th><th>Local</th><th>Remote</th><th>Status</th><th>Risk</th><th>Flags</th></tr></thead>
+          <tbody id="net-table"><tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text2)">Scanning network...</td></tr></tbody>
+        </table></div>
+        <div class="log-box" id="net-log" style="margin-top:12px"><div>[INIT] Network monitor starting...</div></div>
+      </div>
+    </div>
+
+    <!-- HEALTH PANEL -->
+    <div class="full panel" id="panel-health">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-title">CPU & Memory</div>
+          <div style="margin-bottom:12px"><span style="font-size:11px;color:var(--text2)">CPU</span><span class="mono" style="float:right" id="h-cpu">—%</span><div class="progress"><div class="progress-fill" id="h-cpu-bar" style="width:0%;background:var(--accent)"></div></div></div>
+          <div style="margin-bottom:12px"><span style="font-size:11px;color:var(--text2)">Memory</span><span class="mono" style="float:right" id="h-ram">—%</span><div class="progress"><div class="progress-fill" id="h-ram-bar" style="width:0%;background:var(--success)"></div></div></div>
+          <div><span style="font-size:11px;color:var(--text2)">Disk</span><span class="mono" style="float:right" id="h-disk">—%</span><div class="progress"><div class="progress-fill" id="h-disk-bar" style="width:0%;background:var(--warn)"></div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">System Info</div>
+          <div id="health-info" style="font-size:12px;line-height:2">Loading...</div>
+        </div>
+        <div class="card full">
+          <div class="card-title">Network I/O</div>
+          <div id="net-io" style="font-size:12px">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BREACH PANEL -->
+    <div class="full panel" id="panel-breach">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-title">🔑 Password Breach Check (HIBP — No API Key)</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Uses k-Anonymity. Your password is NEVER sent — only a partial SHA-1 hash prefix is transmitted.</p>
+          <input type="password" id="breach-pw" placeholder="Enter password to check...">
+          <button class="btn btn-danger" onclick="checkBreach('password')" style="margin-top:10px;width:100%">🔍 Check Password</button>
+          <div id="breach-pw-result" style="margin-top:12px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📧 Email Breach Scan</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Check if your email has appeared in known data breaches.</p>
+          <input type="email" id="breach-email" placeholder="your@email.com">
+          <button class="btn btn-primary" onclick="checkBreach('email')" style="margin-top:10px;width:100%">🔍 Check Email</button>
+          <div id="breach-email-result" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI PANEL -->
+    <div class="full panel" id="panel-ai">
+      <div class="card">
+        <div class="card-title">🤖 Local AI Forensics Assistant — Zero API Keys</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Uses Ollama (local LLM) if installed, otherwise falls back to the built-in expert system. No data leaves your machine.</p>
+        <div id="ai-chat" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;min-height:300px;max-height:400px;overflow-y:auto;margin-bottom:12px">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px">
+            <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">🤖 IDIFFS Local AI</div>
+            Welcome! Ask me about phishing, OTP fraud, ransomware, UPI scams, Aadhaar security, or any cyber crime topic.
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input id="ai-input" placeholder="Ask about cyber crime..." onkeydown="if(event.key==='Enter')sendAI()">
+          <button class="btn btn-primary" onclick="sendAI()">Send ➤</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="quickAI('What is phishing?')" style="font-size:11px">Phishing</button>
+          <button class="btn btn-outline" onclick="quickAI('Is my OTP safe?')" style="font-size:11px">OTP Safety</button>
+          <button class="btn btn-outline" onclick="quickAI('How to report cyber crime')" style="font-size:11px">Report Crime</button>
+          <button class="btn btn-outline" onclick="quickAI('UPI fraud prevention')" style="font-size:11px">UPI Fraud</button>
+          <button class="btn btn-outline" onclick="quickAI('ransomware attack')" style="font-size:11px">Ransomware</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS PANEL -->
+    <div class="full panel" id="panel-alerts">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-title">🔔 Mobile Push Alert Setup (ntfy.sh — Free)</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Get real-time threat alerts on your phone. No app install needed — just subscribe to a topic via browser.</p>
+          <input id="alert-topic" placeholder="Enter a topic name (e.g., my_idiffs_alerts)">
+          <button class="btn btn-primary" onclick="subscribeAlerts()" style="margin-top:10px;width:100%">📲 Subscribe</button>
+          <div id="alert-result" style="margin-top:12px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Test Notifications</div>
+          <div class="qr-section">
+            <div style="font-size:48px;margin-bottom:10px">📱</div>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:16px">After subscribing, open the URL on your phone to receive alerts instantly.</p>
+            <button class="btn btn-success" onclick="testAlert()" id="test-alert-btn" disabled>🔔 Send Test Alert</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DNS PANEL -->
+    <div class="full panel" id="panel-dns">
+      <div class="card">
+        <div class="card-title">🔍 DNS Intelligence Lookup</div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <input id="dns-input" placeholder="Enter domain (e.g., sbi-secure-login.xyz)" onkeydown="if(event.key==='Enter')dnsLookup()">
+          <button class="btn btn-primary" onclick="dnsLookup()">Resolve</button>
+        </div>
+        <div id="dns-result"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Clock
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})},1000);
+
+// Tabs
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='health')fetchHealth();
+}
+
+// Network Monitor
+let autoScan=true,scanInterval;
+function startAutoScan(){scanInterval=setInterval(fetchNetwork,5000);fetchNetwork()}
+function toggleAutoScan(){autoScan=!autoScan;if(autoScan){startAutoScan();document.getElementById('auto-toggle').textContent='⏸ Pause'}else{clearInterval(scanInterval);document.getElementById('auto-toggle').textContent='▶ Resume'}}
+
+async function fetchNetwork(){
+  try{
+    const d=await(await fetch('/api/enhanced/network/live')).json();
+    document.getElementById('s-conn').textContent=d.total;
+    document.getElementById('s-threats').textContent=d.threat_count;
+    const tb=document.getElementById('net-table');
+    if(!d.connections.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text2)">No active connections detected</td></tr>';return}
+    tb.innerHTML=d.connections.map(c=>`<tr class="${c.is_threat?'threat-row':''}">
+      <td class="mono">${c.pid}</td><td style="font-weight:600">${c.process}</td>
+      <td class="mono">${c.local}</td><td class="mono">${c.remote}</td>
+      <td><span class="badge badge-info">${c.status}</span></td>
+      <td><span class="badge ${c.risk>=40?'badge-danger':c.risk>=20?'badge-warn':'badge-success'}">${c.risk}/100</span></td>
+      <td style="font-size:11px;color:var(--text2)">${c.flags.join('; ')||'—'}</td></tr>`).join('');
+    const log=document.getElementById('net-log');
+    log.innerHTML+=`<div>[${d.timestamp}] Scanned ${d.total} connections — ${d.threat_count} threats</div>`;
+    log.scrollTop=log.scrollHeight;
+  }catch(e){console.error(e)}
+}
+
+// System Health
+async function fetchHealth(){
+  try{
+    const d=await(await fetch('/api/enhanced/system/health')).json();
+    document.getElementById('s-cpu').textContent=d.cpu.percent+'%';
+    document.getElementById('s-ram').textContent=d.memory.percent+'%';
+    document.getElementById('h-cpu').textContent=d.cpu.percent+'%';
+    document.getElementById('h-cpu-bar').style.width=d.cpu.percent+'%';
+    document.getElementById('h-ram').textContent=d.memory.percent+'%';
+    document.getElementById('h-ram-bar').style.width=d.memory.percent+'%';
+    document.getElementById('h-disk').textContent=d.disk.percent+'%';
+    document.getElementById('h-disk-bar').style.width=d.disk.percent+'%';
+    document.getElementById('health-info').innerHTML=`
+      <div>🖥 Cores: <strong>${d.cpu.cores}</strong> | Freq: <strong>${d.cpu.freq_mhz||'N/A'} MHz</strong></div>
+      <div>💾 RAM: <strong>${d.memory.used_gb}/${d.memory.total_gb} GB</strong></div>
+      <div>📀 Disk: <strong>${d.disk.used_gb}/${d.disk.total_gb} GB</strong></div>
+      <div>⏱ Uptime: <strong>${d.uptime}</strong></div>
+      <div>🔌 Boot: <strong>${d.boot_time}</strong></div>
+      ${d.battery?`<div>🔋 Battery: <strong>${d.battery.percent}%</strong> ${d.battery.plugged?'⚡ Charging':''}</div>`:''}`;
+    document.getElementById('net-io').innerHTML=`
+      <div style="display:flex;gap:24px">
+        <div>📤 Sent: <strong>${d.network.bytes_sent_mb} MB</strong> (${d.network.packets_sent.toLocaleString()} pkts)</div>
+        <div>📥 Recv: <strong>${d.network.bytes_recv_mb} MB</strong> (${d.network.packets_recv.toLocaleString()} pkts)</div>
+      </div>`;
+  }catch(e){document.getElementById('health-info').textContent='Error fetching health data'}
+}
+
+// Breach Checker
+async function checkBreach(type){
+  const body={};
+  if(type==='password'){body.password=document.getElementById('breach-pw').value;if(!body.password)return alert('Enter a password')}
+  else{body.email=document.getElementById('breach-email').value;if(!body.email)return alert('Enter an email')}
+  try{
+    const d=await(await fetch('/api/enhanced/breach/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+    if(type==='password'&&d.password_result){
+      const r=d.password_result;
+      document.getElementById('breach-pw-result').innerHTML=`<div style="padding:12px;border-radius:8px;background:${r.compromised?'rgba(239,68,68,.1)':'rgba(34,197,94,.1)'};border:1px solid ${r.compromised?'var(--danger)':'var(--success)'};font-size:13px">${r.message}</div>`;
+    }
+    if(type==='email'&&d.email_result){
+      const r=d.email_result;
+      document.getElementById('breach-email-result').innerHTML=`<div style="padding:12px;border-radius:8px;background:${r.breach_count>0?'rgba(239,68,68,.1)':'rgba(34,197,94,.1)'};border:1px solid ${r.breach_count>0?'var(--danger)':'var(--success)'};font-size:13px">${r.message}<br><span style="font-size:11px;color:var(--text2)">${r.recommendation}</span></div>`;
+    }
+  }catch(e){alert('Breach check failed')}
+}
+
+// Local AI
+async function sendAI(){
+  const inp=document.getElementById('ai-input');
+  const msg=inp.value.trim();if(!msg)return;inp.value='';
+  const chat=document.getElementById('ai-chat');
+  chat.innerHTML+=`<div style="background:var(--accent);color:#fff;border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px;margin-left:20%">${msg}</div>`;
+  chat.innerHTML+=`<div id="ai-typing" style="font-size:12px;color:var(--text2);padding:8px">🤖 Thinking...</div>`;
+  chat.scrollTop=chat.scrollHeight;
+  try{
+    const d=await(await fetch('/api/enhanced/ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})).json();
+    document.getElementById('ai-typing')?.remove();
+    chat.innerHTML+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px">
+      <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">🤖 ${d.engine||'AI'}</div>${d.response}</div>`;
+    chat.scrollTop=chat.scrollHeight;
+  }catch(e){document.getElementById('ai-typing')?.remove();chat.innerHTML+=`<div style="color:var(--danger);font-size:12px;padding:8px">Connection error</div>`}
+}
+function quickAI(msg){document.getElementById('ai-input').value=msg;sendAI()}
+
+// Alerts
+async function subscribeAlerts(){
+  const topic=document.getElementById('alert-topic').value.trim();
+  try{
+    const d=await(await fetch('/api/enhanced/alerts/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic})})).json();
+    document.getElementById('alert-result').innerHTML=`<div style="padding:12px;background:rgba(34,197,94,.1);border:1px solid var(--success);border-radius:8px;font-size:12px">
+      ✅ Subscribed! Open on your phone:<br><a href="${d.subscribe_url}" target="_blank" style="color:var(--accent);word-break:break-all">${d.subscribe_url}</a></div>`;
+    document.getElementById('test-alert-btn').disabled=false;
+  }catch(e){alert('Subscribe failed')}
+}
+async function testAlert(){
+  try{await fetch('/api/enhanced/alerts/test',{method:'POST'});alert('Test alert sent! Check your phone.')}catch(e){alert('Failed')}
+}
+
+// DNS
+async function dnsLookup(){
+  const h=document.getElementById('dns-input').value.trim();if(!h)return alert('Enter a domain');
+  try{
+    const d=await(await fetch('/api/enhanced/dns/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hostname:h})})).json();
+    let html=`<div style="padding:14px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">${d.hostname}</div>`;
+    if(d.resolved){
+      html+=`<div style="font-size:12px;margin-bottom:4px">✅ Resolves to: <strong class="mono">${d.ips.join(', ')}</strong></div>`;
+      if(d.reverse_dns)html+=`<div style="font-size:12px">🔄 Reverse DNS: <strong>${d.reverse_dns}</strong></div>`;
+    }else{html+=`<div style="color:var(--danger);font-size:13px">🚨 Domain does NOT resolve — likely fake or offline!</div>`}
+    html+='</div>';
+    document.getElementById('dns-result').innerHTML=html;
+  }catch(e){document.getElementById('dns-result').innerHTML='<div style="color:var(--danger)">Lookup failed</div>'}
+}
+
+// Init
+startAutoScan();
+fetchHealth();
+setInterval(fetchHealth,10000);
+</script>
+</body>
+</html>

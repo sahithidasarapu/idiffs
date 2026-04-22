@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Databases
+data/*.db
+data/*.sqlite
+
+# Logs
+logs/
+*.log
+
+# Project specific
+uploads/
+scratch/
+.gemini/
+
+# Android/Gradle
+SmsCompanionApp/.gradle/
+SmsCompanionApp/app/build/
+SmsCompanionApp/build/
+SmsCompanionApp/local.properties
+SmsCompanionApp/.idea/
+
+# OS
+.DS_Store
+Thumbs.db

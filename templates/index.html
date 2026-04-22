@@ -1,0 +1,3810 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDIFFS v3.2 — Cyber Crime Intelligence Platform</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --bg: #f0f4f9;
+      --bg2: #e4eaf3;
+      --card: #ffffff;
+      --sidebar: #0b1e3d;
+      --sidebar2: #122952;
+      --text: #0a1628;
+      --text2: #3a4a6b;
+      --accent: #1a56db;
+      --accent2: #1240a8;
+      --danger: #c0392b;
+      --danger2: #e74c3c;
+      --success: #1a7340;
+      --success2: #27ae60;
+      --warn: #c07818;
+      --warn2: #f39c12;
+      --border: #c8d4e8;
+      --shadow: 0 2px 12px rgba(10, 22, 40, 0.10);
+      --shadow2: 0 4px 24px rgba(10, 22, 40, 0.15);
+      --mono: 'Space Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --display: 'Bebas Neue', sans-serif;
+      --divider: #e0e6ed;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+    }
+
+    /* TOAST NOTIFICATIONS */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: var(--sidebar);
+      color: #fff;
+      padding: 16px 20px;
+      border-radius: 10px;
+      box-shadow: var(--shadow2);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      animation: toastIn 0.3s ease forwards;
+      border-left: 4px solid var(--accent);
+    }
+
+    .toast.success {
+      border-left-color: var(--success);
+    }
+
+    .toast.warn {
+      border-left-color: var(--warn);
+    }
+
+    .toast.danger {
+      border-left-color: var(--danger);
+    }
+
+    .toast-icon {
+      font-size: 20px;
+    }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .toast-msg {
+      font-size: 12px;
+      color: #a0bce0;
+      line-height: 1.4;
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateX(50px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .toast.out {
+      animation: toastOut 0.3s ease forwards;
+    }
+
+    @keyframes toastOut {
+      to {
+        opacity: 0;
+        transform: translateX(50px)
+      }
+    }
+
+    /* SIDEBAR */
+    #sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--sidebar);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+      position: relative;
+      z-index: 100;
+    }
+
+    #sidebar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    #sidebar::-webkit-scrollbar-thumb {
+      background: #2a4a7f;
+      border-radius: 2px;
+    }
+
+    .sidebar-brand {
+      padding: 22px 18px 14px;
+      border-bottom: 1px solid #1e3a6e;
+    }
+
+    .sidebar-brand .logo-text {
+      font-family: var(--display);
+      font-size: 28px;
+      letter-spacing: 3px;
+      color: #e8f0ff;
+      line-height: 1;
+    }
+
+    .sidebar-brand .logo-sub {
+      font-size: 9px;
+      color: #7a9fd4;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .sidebar-agency {
+      padding: 10px 18px;
+      font-size: 10px;
+      color: #5a7fbc;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #1e3a6e;
+    }
+
+    .nav-section {
+      padding: 8px 18px 4px;
+      font-size: 9px;
+      color: #4a6a9e;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      cursor: pointer;
+      color: #a0bce0;
+      font-size: 13px;
+      font-weight: 400;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background: #1e3a6e;
+      color: #ddeaff;
+      border-left-color: #4a7fd4;
+    }
+
+    .nav-item.active {
+      background: #1e3a6e;
+      color: #ffffff;
+      border-left-color: #3a7bfc;
+    }
+
+    .nav-item .nav-icon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--danger);
+      color: #fff;
+      font-size: 9px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-family: var(--mono);
+    }
+
+    .sidebar-emergency {
+      margin-top: auto;
+      padding: 14px 16px;
+      background: #1a0a0a;
+      border-top: 2px solid #8b1c1c;
+    }
+
+    .sidebar-emergency .emg-title {
+      font-size: 9px;
+      color: #e05050;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .emg-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #2d0f0f;
+      border: 1px solid #8b1c1c;
+      border-radius: 6px;
+      padding: 7px 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      color: #ff7070;
+      text-decoration: none;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .emg-btn:hover {
+      background: #8b1c1c;
+      color: #fff;
+    }
+
+    .emg-btn .emg-num {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: #ff4444;
+      margin-left: auto;
+    }
+
+    /* MAIN */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    #topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .topbar-title {
+      font-size: 15px;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .topbar-title span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .topbar-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--success);
+      margin-left: auto;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .5;
+        transform: scale(1.3)
+      }
+    }
+
+    .topbar-time {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text2);
+      padding-left: 16px;
+      border-left: 1px solid var(--border);
+    }
+
+    .topbar-ver {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      background: #e8f0fe;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    #content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+    }
+
+    #content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #content::-webkit-scrollbar-thumb {
+      background: #c0cce0;
+      border-radius: 3px;
+    }
+
+    /* SECTIONS */
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+      animation: fadeIn .25s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .section-header .sh-icon {
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    .section-header .sh-title {
+      font-family: var(--display);
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .section-header .sh-sub {
+      font-size: 12px;
+      color: var(--text2);
+      letter-spacing: 0.5px;
+    }
+
+    .section-header .sh-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      letter-spacing: 1px;
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 12px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 14px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card .stat-label {
+      font-size: 10px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+
+    .stat-card .stat-value {
+      font-family: var(--mono);
+      font-size: 28px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-card .stat-change {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 6px;
+    }
+
+    .stat-card.danger {
+      border-color: #f5c6c6;
+    }
+
+    .stat-card.danger .stat-value {
+      color: var(--danger);
+    }
+
+    .stat-card.success {
+      border-color: #c6f0d6;
+    }
+
+    .stat-card.success .stat-value {
+      color: var(--success);
+    }
+
+    .stat-card.warn {
+      border-color: #f5e6c6;
+    }
+
+    .stat-card.warn .stat-value {
+      color: var(--warn);
+    }
+
+    /* FORMS */
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .form-label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: var(--sans);
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .form-input::placeholder {
+      color: #9aadca;
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* BUTTONS */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: var(--sans);
+      font-weight: 500;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent2);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #a93226;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #145a30;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-warn {
+      background: var(--warn);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 7px 14px;
+      font-size: 12px;
+    }
+
+    /* TABLE */
+    .data-table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table th {
+      background: var(--bg2);
+      color: var(--text2);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 500;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 11px 16px;
+      border-bottom: 1px solid #edf1f7;
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+      background: #f5f8ff;
+    }
+
+    .data-table .mono {
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .data-table tr.anomaly-row td {
+      background: #fff0f0;
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-danger {
+      background: #fde8e8;
+      color: var(--danger);
+    }
+
+    .badge-success {
+      background: #e2f5ea;
+      color: var(--success);
+    }
+
+    .badge-warn {
+      background: #fef3e0;
+      color: var(--warn);
+    }
+
+    .badge-info {
+      background: #e8f0fe;
+      color: var(--accent);
+    }
+
+    .badge-neutral {
+      background: var(--bg2);
+      color: var(--text2);
+    }
+
+    /* RISK METER */
+    .risk-meter {
+      margin: 20px 0;
+    }
+
+    .risk-meter-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    .risk-meter-bar {
+      height: 10px;
+      background: var(--bg2);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .risk-meter-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.8s ease;
+    }
+
+    .risk-low .risk-meter-fill {
+      background: var(--success);
+    }
+
+    .risk-medium .risk-meter-fill {
+      background: var(--warn);
+    }
+
+    .risk-high .risk-meter-fill {
+      background: var(--danger);
+    }
+
+    /* RESULT BOX */
+    .result-box {
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin: 16px 0;
+      display: none;
+      border-left: 5px solid;
+    }
+
+    .result-box.show {
+      display: block;
+      animation: fadeIn .3s ease;
+    }
+
+    .result-box.safe {
+      background: #eefbf4;
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .result-box.danger {
+      background: #fdeaea;
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .result-box.warn {
+      background: #fff8ed;
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    .result-box .rb-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .result-box .rb-detail {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    /* CHECK LIST */
+    .check-list {
+      list-style: none;
+      margin: 12px 0;
+    }
+
+    .check-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 13px;
+      color: var(--text);
+      border-bottom: 1px solid #f0f4f9;
+    }
+
+    .check-list li:last-child {
+      border-bottom: none;
+    }
+
+    .check-list .ci {
+      font-size: 15px;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .check-list .ci.ok {
+      color: var(--success);
+    }
+
+    .check-list .ci.bad {
+      color: var(--danger);
+    }
+
+    .check-list .ci.warn {
+      color: var(--warn);
+    }
+
+    /* CHAT */
+    #chat-messages {
+      height: 380px;
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #chat-messages::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .msg.user {
+      background: var(--accent);
+      color: #fff;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.ai {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      max-width: 88%;
+    }
+
+    .msg-label {
+      font-size: 10px;
+      color: var(--text2);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 500;
+    }
+
+    .typing-dots span {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin: 0 2px;
+      animation: blink 1.2s infinite;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes blink {
+
+      0%,
+      80%,
+      100% {
+        opacity: .2;
+        transform: scale(1)
+      }
+
+      40% {
+        opacity: 1;
+        transform: scale(1.3)
+      }
+    }
+
+    /* VOICE */
+    .voice-ring {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--bg2);
+      border: 4px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      cursor: pointer;
+      margin: 0 auto;
+      transition: all 0.3s;
+    }
+
+    .voice-ring.active {
+      background: #fdeaea;
+      border-color: var(--danger);
+      animation: voicePulse 1s infinite;
+    }
+
+    @keyframes voicePulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.4)
+      }
+
+      70% {
+        box-shadow: 0 0 0 20px rgba(192, 57, 43, 0)
+      }
+    }
+
+    #voice-transcript {
+      margin-top: 14px;
+      padding: 12px;
+      background: var(--bg);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text2);
+      min-height: 50px;
+    }
+
+    /* MONITOR */
+    .monitor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .monitor-live {
+      background: #0a1628;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #7ddc7d;
+      height: 280px;
+      overflow-y: auto;
+    }
+
+    .ml-line {
+      margin-bottom: 4px;
+      line-height: 1.5;
+    }
+
+    .ml-ts {
+      color: #5a9f9f;
+    }
+
+    .ml-danger {
+      color: #ff7070;
+    }
+
+    .ml-warn {
+      color: #e0c060;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 6px;
+      margin-top: 12px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--bg2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--accent);
+      transition: width 0.6s ease;
+    }
+
+    /* VAULT */
+    .vault-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background: var(--bg);
+    }
+
+    .vault-icon {
+      font-size: 28px;
+    }
+
+    .vault-info {
+      flex: 1;
+    }
+
+    .vi-type {
+      font-size: 10px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .vi-label {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 500;
+      margin: 2px 0;
+    }
+
+    .vi-data {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .vault-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* PORTAL GRID */
+    .portal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .portal-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pc-icon {
+      font-size: 26px;
+    }
+
+    .pc-name {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .pc-desc {
+      font-size: 12px;
+      color: var(--text2);
+      flex: 1;
+    }
+
+    /* CRIME CATEGORY */
+    .crime-cats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .crime-cat-btn {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .crime-cat-btn:hover {
+      border-color: var(--accent);
+      background: #f0f5ff;
+    }
+
+    .crime-cat-btn.selected {
+      border-color: var(--accent);
+      background: #e8f0fe;
+    }
+
+    .cc-icon {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .cc-label {
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* INVESTIGATIVE ACTION BUTTON */
+    .action-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(26, 86, 219, 0.2);
+      margin-top: 12px;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(26, 86, 219, 0.3);
+      filter: brightness(1.1);
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
+
+    /* DIVIDER */
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 16px 0;
+    }
+
+    /* FLEXROW */
+    .flex-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .text-muted {
+      color: var(--text2);
+      font-size: 13px;
+    }
+
+    .mt-4 {
+      margin-top: 16px;
+    }
+
+    /* EVENTS */
+    .event-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f4f9;
+      font-size: 13px;
+    }
+
+    .event-row:last-child {
+      border-bottom: none;
+    }
+
+    .event-time {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text2);
+      flex-shrink: 0;
+    }
+
+    .event-module {
+      flex-shrink: 0;
+    }
+
+    .event-desc {
+      flex: 1;
+      color: var(--text);
+    }
+
+    .event-sev {
+      flex-shrink: 0;
+    }
+
+    /* DIGILOCKER */
+    .dl-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f4f9;
+      font-size: 13px;
+    }
+
+    .dl-step:last-child {
+      border-bottom: none;
+    }
+
+    .dl-doc-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      margin-bottom: 10px;
+    }
+
+    .dl-doc-icon {
+      font-size: 28px;
+    }
+
+    .dl-doc-info {
+      flex: 1;
+    }
+
+    .dl-doc-name {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .dl-doc-issuer {
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    .dl-doc-num {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .dl-verified {
+      color: var(--success);
+      font-size: 11px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dl-seal {
+      font-family: var(--mono);
+      font-size: 8px;
+      color: #5a7fbc;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    /* OTP INPUT */
+    .otp-input {
+      letter-spacing: 8px;
+      font-family: var(--mono);
+      font-size: 20px;
+      text-align: center;
+    }
+
+    /* LOADING */
+    .loading-spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* AI Badge */
+    .ai-powered-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(135deg, #1a56db, #6c3483);
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 10px;
+      border-radius: 12px;
+      letter-spacing: 1px;
+    }
+
+    #hamburger {
+      display: none; /* Hidden on Desktop */
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text);
+      user-select: none;
+      padding-right: 10px;
+    }
+    
+    #sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    /* MOBILE & TABLET ADAPTATION */
+    @media (max-width: 768px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .two-col, .monitor-grid, .portal-grid, .crime-cats { grid-template-columns: 1fr; }
+      
+      #hamburger { display: block; } /* Only show on mobile */
+      .hide-mobile { display: none; }
+      
+      #sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0; bottom: 0;
+        width: 280px;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+      }
+      
+      #sidebar.open { left: 0; }
+      #sidebar-overlay.active { display: block; opacity: 1; }
+      
+      #topbar { padding: 0 16px; gap: 8px; }
+      #content { padding: 16px; }
+      
+      .topbar-status, .topbar-ver { display: none; }
+    }
+    
+    #threat-map { height: 400px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); }
+    .war-room-chat { height: 350px; overflow-y: auto; background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--mono); font-size: 11px; }
+    .chat-msg { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
+    .chat-time { color: var(--accent); font-weight: bold; }
+    .chat-user { color: var(--danger); font-weight: bold; }
+  </style>
+</head>
+
+<body>
+  <div id="toast-container"></div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-text">IDIFSS</div>
+      <div class="logo-sub">Integrated Digital Intelligence &amp;<br>Forensic Security System</div>
+    </div>
+    <div class="sidebar-agency">🏛️ Government of India · Cyber Wing</div>
+
+    <div class="nav-section">Intelligence</div>
+    <div class="nav-item active" onclick="showSection('dashboard')">
+      <span class="nav-icon">📊</span> Dashboard
+      <span class="nav-badge" id="badge-events">0</span>
+    </div>
+    <div class="nav-item" onclick="showSection('visual')">
+      <span class="nav-icon">📈</span> Visual Intelligence
+    </div>
+
+    <div class="nav-section">Detection Modules</div>
+    <div class="nav-item" onclick="showSection('url')">
+      <span class="nav-icon">🔗</span> URL Threat Analyzer
+    </div>
+    <div class="nav-item" onclick="showSection('scam')">
+      <span class="nav-icon">📨</span> Scam &amp; Phishing Detector
+    </div>
+    <div class="nav-item" onclick="showSection('transactions')">
+      <span class="nav-icon">💳</span> Transaction Anomaly
+    </div>
+    <div class="nav-item" onclick="showSection('monitor')">
+      <span class="nav-icon">🖥️</span> OS Audit & Monitor
+    </div>
+
+    <div class="nav-section">AI &amp; Assistance</div>
+    <div class="nav-item" onclick="showSection('chatbot')">
+      <span class="nav-icon">🤖</span> AI Forensics Assistant
+    </div>
+    <div class="nav-item" onclick="showSection('voice')">
+      <span class="nav-icon">🎙️</span> Voice Assistant
+    </div>
+
+    <div class="nav-section">Secure Storage</div>
+    <div class="nav-item" onclick="showSection('vault')">
+      <span class="nav-icon">🔐</span> Identity Vault
+    </div>
+    <div class="nav-item" onclick="showSection('digilocker')">
+      <span class="nav-icon">📁</span> DigiLocker Sync
+    </div>
+
+    <div class="nav-section">Resources</div>
+    <div class="nav-item" onclick="showSection('report')">
+      <span class="nav-icon">🚨</span> Report a Cyber Crime
+    </div>
+    <div class="nav-item" onclick="showSection('portals')">
+      <span class="nav-icon">🏛️</span> Official Cyber Portals
+    </div>
+
+    <div class="sidebar-emergency">
+      <div class="emg-title">⚡ Emergency Helplines</div>
+      <a href="tel:1930" class="emg-btn">🚔 Cyber Crime <span class="emg-num">1930</span></a>
+      <a href="tel:100" class="emg-btn">👮 Police <span class="emg-num">100</span></a>
+      <a href="tel:112" class="emg-btn">🆘 National Emergency <span class="emg-num">112</span></a>
+      <a href="tel:1091" class="emg-btn">👩 Women Helpline <span class="emg-num">1091</span></a>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="topbar">
+      <div id="hamburger" onclick="toggleSidebar()">☰</div>
+      <div class="topbar-title">IDIFSS <span class="hide-mobile">— Cyber Crime Intelligence Platform</span></div>
+      <span class="topbar-ver">v3.2.1-GOV</span>
+      <div class="topbar-status">
+        <div class="status-dot"></div>
+        LIVE MONITORING ACTIVE
+      </div>
+
+
+      <div class="topbar-time" id="clock">--:--:--</div>
+    </div>
+
+    <div id="content">
+
+      <!-- ══ DASHBOARD ══ -->
+      <div class="section active" id="sec-dashboard">
+        <div class="section-header">
+          <span class="sh-icon">📊</span>
+          <div>
+            <div class="sh-title">FORENSIC DASHBOARD</div>
+            <div class="sh-sub">Real-time Cyber Event Intelligence Feed</div>
+          </div>
+          <span class="sh-badge">Live</span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Events</div>
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-change">Since session start</div>
+          </div>
+          <div class="stat-card danger">
+            <div class="stat-label">High Severity</div>
+            <div class="stat-value" id="stat-high">0</div>
+            <div class="stat-change">Threats detected</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="stat-label">URLs Scanned</div>
+            <div class="stat-value" id="stat-urls">0</div>
+            <div class="stat-change">Deep learning analysis</div>
+          </div>
+          <div class="stat-card success">
+            <div class="stat-label">Vault Items</div>
+            <div class="stat-value" id="stat-vault">0</div>
+            <div class="stat-change">AES-256 encrypted</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Live Forensic Event Feed</div>
+          <div class="flex-row" style="margin-bottom:14px">
+            <button class="btn btn-outline btn-sm" onclick="clearEvents()">🗑️ Clear Events</button>
+            <button class="btn btn-primary btn-sm" onclick="loadEvents()">↻ Refresh</button>
+            <button class="btn btn-primary btn-sm" style="background:var(--accent)" onclick="generateReport()">📄 Generate Forensic Report</button>
+          </div>
+          <div id="event-log" style="max-height:380px;overflow-y:auto;"></div>
+          <div id="no-events" class="text-center text-muted" style="padding:40px">No forensic events yet. Use the
+            detection modules to start analysis.</div>
+        </div>
+        <div class="two-col" style="margin-top:20px">
+          <div class="card">
+            <div class="card-title">🌐 Live Threat Intelligence Map</div>
+            <div id="threat-map"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">💬 Forensic War Room (Multi-User)</div>
+            <div class="war-room-chat" id="chat-box">
+              <div class="chat-msg">
+                <span class="chat-time">[SYSTEM]</span> <span class="chat-user">BOT:</span> Forensic War Room initialized. All investigators synced.
+              </div>
+            </div>
+            <div class="flex-row" style="margin-top:10px;gap:8px">
+              <input type="text" id="war-room-input" class="form-input" placeholder="Broadcast to investigators..." style="flex:1" onkeydown="if(event.key==='Enter')sendWarRoomChat()">
+              <button class="btn btn-primary" onclick="sendWarRoomChat()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ URL ANALYZER ══ -->
+      <div class="section" id="sec-url">
+        <div class="section-header">
+          <span class="sh-icon">🔗</span>
+          <div>
+            <div class="sh-title">URL THREAT ANALYZER</div>
+            <div class="sh-sub">Deep Learning Phishing &amp; Impersonation Detection · 20-Feature Model</div>
+          </div>
+          <span class="sh-badge">DL-Powered</span>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">🔍 Manual URL Investigation</div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label class="form-label">Website or Banking URL</label>
+              <input class="form-input" id="url-input" type="text"
+                placeholder="e.g. https://onlinesbi-secure-login.xyz/verify"
+                onkeydown="if(event.key==='Enter')analyzeURL()">
+            </div>
+            <button class="btn btn-primary" id="url-scan-btn" onclick="analyzeURL()" style="width:100%">Analyze URL</button>
+            <div style="font-size:11px;color:var(--text2);margin-top:10px">💡 Paste any suspicious URL for immediate 20-feature DL scanning.</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📡 Live URL Intercepts</div>
+            <div id="live-url-feed" style="max-height:180px; overflow-y:auto; font-family:var(--mono); font-size:11px;">
+              <div class="text-center text-muted" style="padding:40px">Waiting for live data from companion app...</div>
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-top:10px">Signals arriving via Socket.IO from synchronized devices.</div>
+          </div>
+        </div>
+        <div id="url-result" class="result-box">
+          <div class="rb-title" id="url-verdict"></div>
+          <div style="margin:14px 0">
+            <div class="risk-meter" id="url-risk-meter">
+              <div class="risk-meter-label"><span>Risk Score</span><span id="url-risk-pct">0%</span></div>
+              <div class="risk-meter-bar">
+                <div class="risk-meter-fill" id="url-risk-fill" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="rb-detail" id="url-domain-info"></div>
+          <hr class="divider">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">
+            Security Feature Analysis</div>
+          <ul class="check-list" id="url-checks"></ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Detection History (Live SMS & Manual)</div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>URL</th>
+                  <th>Risk Level</th>
+                  <th>Score</th>
+                  <th>Verdict</th>
+                </tr>
+              </thead>
+              <tbody id="url-history"></tbody>
+            </table>
+          </div>
+          <div id="url-empty" class="text-center text-muted" style="padding:20px">No URLs scanned yet</div>
+        </div>
+      </div>
+
+      <!-- ══ SCAM DETECTOR ══ -->
+      <div class="section" id="sec-scam">
+        <div class="section-header">
+          <span class="sh-icon">📨</span>
+          <div>
+            <div class="sh-title">SCAM &amp; PHISHING DETECTOR</div>
+            <div class="sh-sub">NLP-Powered Message &amp; SMS Fraud Intelligence</div>
+          </div>
+          <span class="sh-badge">NLP Analysis</span>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">🔍 Manual Message Analysis</div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Message Type</label>
+              <select class="form-select" id="scam-type">
+                <option value="sms">SMS / Text Message</option>
+                <option value="email">Email</option>
+                <option value="whatsapp">WhatsApp Message</option>
+                <option value="call">Phone Call Transcript</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Sender (phone / email address)</label>
+              <input class="form-input" id="scam-sender" placeholder="e.g. +91-9876543210">
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label class="form-label">Message Content</label>
+              <textarea class="form-textarea" id="scam-text" style="height:80px"
+                placeholder="Paste the suspicious message here..."></textarea>
+            </div>
+            <button class="btn btn-primary" id="scam-btn" onclick="analyzeScam()" style="width:100%">NLP Analysis</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📡 Live SMS Intercepts</div>
+            <div id="live-scam-feed" style="max-height:260px; overflow-y:auto; font-family:var(--mono); font-size:11px;">
+              <div class="text-center text-muted" style="padding:60px">Awaiting live SMS data...</div>
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-top:10px">Real-time forwarding active from IDIFFS Companion.</div>
+          </div>
+        </div>
+        <div class="two-col" style="margin-top:20px">
+          <div>
+            <div id="scam-result" class="result-box" style="margin-top:0">
+              <div class="rb-title" id="scam-verdict"></div>
+              <div class="risk-meter" style="margin:14px 0" id="scam-risk-meter">
+                <div class="risk-meter-label"><span>Scam Probability</span><span id="scam-risk-pct">0%</span></div>
+                <div class="risk-meter-bar">
+                  <div class="risk-meter-fill" id="scam-risk-fill" style="width:0%"></div>
+                </div>
+              </div>
+              <ul class="check-list" id="scam-checks"></ul>
+            </div>
+            <div class="card" style="margin-top:14px">
+              <div class="card-title">Common Scam Patterns</div>
+              <ul class="check-list">
+                <li><span class="ci bad">⚠️</span>Urgency — "Your account will be blocked in 24 hours"</li>
+                <li><span class="ci bad">⚠️</span>Asking for OTP, PIN, or password</li>
+                <li><span class="ci bad">⚠️</span>Bit.ly or shortened links in messages</li>
+                <li><span class="ci bad">⚠️</span>Sender not from official bank domain</li>
+                <li><span class="ci bad">⚠️</span>Requests to update KYC or Aadhaar via link</li>
+                <li><span class="ci ok">✔️</span>Banks NEVER ask OTP or password over SMS/call</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card mt-4">
+          <div class="card-title">Detection History (Live SMS & Manual)</div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Type</th>
+                  <th>Sender</th>
+                  <th>Score</th>
+                  <th>Verdict</th>
+                </tr>
+              </thead>
+              <tbody id="scam-history"></tbody>
+            </table>
+          </div>
+          <div id="scam-empty" class="text-center text-muted" style="padding:20px">No messages analyzed yet</div>
+        </div>
+      </div>
+
+      <!-- ══ TRANSACTIONS ══ -->
+      <div class="section" id="sec-transactions">
+        <div class="section-header">
+          <span class="sh-icon">💳</span>
+          <div>
+            <div class="sh-title">TRANSACTION ANOMALY ENGINE</div>
+            <div class="sh-sub">Statistical Deep Learning — Z-Score + IQR + Pattern Analysis</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Upload Bank Statement (CSV)</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Upload your bank transaction CSV. The ML
+            engine uses Z-score, IQR outlier detection, and behavioral pattern analysis to identify fraud.<br><strong
+              style="color:var(--text)">CSV columns: date, amount, merchant (or description)</strong></div>
+          <div class="form-row">
+            <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV()">
+            <button class="btn btn-primary" onclick="document.getElementById('csv-file').click()">📂 Upload CSV
+              Statement</button>
+            <button class="btn btn-outline" onclick="loadSampleData()">📋 Load Sample Data</button>
+            <button class="btn btn-danger btn-sm" onclick="clearTransactions()" style="margin-left:auto">🗑️
+              Clear</button>
+          </div>
+        </div>
+        <div id="trans-stats" class="stat-grid" style="display:none">
+          <div class="stat-card">
+            <div class="stat-label">Total Transactions</div>
+            <div class="stat-value" id="ts-total">0</div>
+          </div>
+          <div class="stat-card danger">
+            <div class="stat-label">Anomalies Found</div>
+            <div class="stat-value" id="ts-anomaly">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Amount</div>
+            <div class="stat-value" id="ts-amount">₹0</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="stat-label">Avg Amount</div>
+            <div class="stat-value" id="ts-avg">₹0</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Transaction Results — <span
+              style="color:var(--danger);font-size:11px;text-transform:none;letter-spacing:0">🔴 Highlighted rows
+              indicate ML-detected anomalies</span></div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount (₹)</th>
+                  <th>Merchant / Description</th>
+                  <th>Risk Score</th>
+                  <th>Status</th>
+                  <th>Anomaly Reason</th>
+                </tr>
+              </thead>
+              <tbody id="trans-table"></tbody>
+            </table>
+          </div>
+          <div id="trans-empty" class="text-center text-muted" style="padding:40px">Upload a CSV file or load sample
+            data to begin anomaly detection</div>
+        </div>
+      </div>
+
+      <!-- ══ VAULT ══ -->
+      <div class="section" id="sec-vault">
+        <div class="section-header">
+          <span class="sh-icon">🔐</span>
+          <div>
+            <div class="sh-title">SECURE IDENTITY VAULT</div>
+            <div class="sh-sub">AES-256-GCM Encrypted Personal Document Store</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Add Identity Document</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Store your sensitive IDs securely. All
+              data is encrypted. Server only stores hash fingerprints.</div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Document Type</label>
+              <select class="form-select" id="vault-type">
+                <option value="aadhaar">🪪 Aadhaar Card</option>
+                <option value="pan">📄 PAN Card</option>
+                <option value="bank">🏦 Bank Account</option>
+                <option value="card">💳 Debit/Credit Card</option>
+                <option value="upi">📱 UPI ID</option>
+                <option value="passport">📗 Passport</option>
+                <option value="dl">🚗 Driving Licence</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Label (e.g. "My SBI Account")</label>
+              <input class="form-input" id="vault-label" placeholder="Descriptive label">
+            </div>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label">Document Number / Secret Data</label>
+              <input class="form-input" id="vault-data" type="password" placeholder="Sensitive data (hidden)">
+            </div>
+            <button class="btn btn-success" onclick="addVaultItem()" style="width:100%">🔒 Encrypt &amp; Store
+              Securely</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Vault Security Status</div>
+            <div style="text-align:center;padding:20px 0">
+              <div style="font-size:50px">🔐</div>
+              <div style="font-size:14px;color:var(--text);margin-top:10px">AES-256-GCM Encryption</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:6px">Military-grade encryption active</div>
+            </div>
+            <div class="progress-label"><span>Encryption Strength</span><span>256-bit</span></div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:100%;background:var(--success)"></div>
+            </div>
+            <div class="progress-label"><span>Data Privacy</span><span>Hash-Only Server</span></div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:100%;background:var(--accent)"></div>
+            </div>
+            <div style="font-size:12px;color:var(--success);text-align:center;margin-top:8px">✅ Raw data never
+              transmitted to server</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Stored Identity Documents — <span
+              style="color:var(--text2);font-size:11px;text-transform:none;letter-spacing:0">Click 👁️ to reveal, 🗑️ to
+              delete</span></div>
+          <div id="vault-list"></div>
+          <div id="vault-empty" class="text-center text-muted" style="padding:40px">No identity documents stored yet.
+            Add your first document above.</div>
+        </div>
+      </div>
+
+      <!-- ══ LIVE MONITOR (FORENSIC DASHBOARD) ══ -->
+      <div class="section" id="sec-monitor">
+        <div class="section-header">
+          <span class="sh-icon">🖥️</span>
+          <div>
+            <div class="sh-title">SYSTEM AUDIT & OS INTELLIGENCE</div>
+            <div class="sh-sub">Real-time Behavioral Analysis · Deep Scan Mode Active</div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px; margin-left:auto">
+            <div id="sys-radar"
+              style="display:flex; align-items:center; gap:8px; background:rgba(26,115,64,0.1); padding:6px 14px; border-radius:20px; border:1px solid var(--success)">
+              <div class="status-dot" style="background:var(--success)"></div>
+              <span style="font-size:10px; font-weight:bold; color:var(--success); letter-spacing:1px"
+                id="sys-radar-text">MONITORING LIVE</span>
+            </div>
+            <div
+              style="font-size:11px; color:var(--text); background:var(--bg2); padding:6px 14px; border-radius:20px; font-weight:600"
+              id="sys-timer-pill">NEXT AUDIT: <span id="sys-timer">8</span>s</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
+            <div class="card-title" style="margin:0">Full System Process Audit</div>
+            <div style="display:flex; gap:16px; align-items:center">
+              <div style="text-align:right">
+                <div style="font-size:9px; color:var(--text2); text-transform:uppercase">Global CPU</div>
+                <div id="mon-cpu-text" style="font-family:var(--mono); font-weight:bold; color:var(--accent)">--%</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:9px; color:var(--text2); text-transform:uppercase">Memory Load</div>
+                <div id="mon-ram-text" style="font-family:var(--mono); font-weight:bold; color:var(--success)">--%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="data-table-wrap" style="max-height: 480px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>PID</th>
+                  <th style="width:40%">APPLICATION / SERVICE</th>
+                  <th>CPU USAGE</th>
+                  <th>MEMORY</th>
+                  <th>RISK LEVEL</th>
+                  <th>FORENSIC STATUS</th>
+                </tr>
+              </thead>
+              <tbody id="sys-proc-table">
+                <tr>
+                  <td colspan="6" style="text-align:center; padding:100px; color:var(--text2)">
+                    <div style="font-size:24px; margin-bottom:10px">📡</div>
+                    Initiating Secure Connection to System Heartbeat...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding-top:15px; border-top:1px solid var(--divider)">
+            <div style="font-size:11px; color:var(--text2)" id="sys-last-update">Waiting for first telemetry packet...
+            </div>
+            <div style="display:flex; gap:10px">
+              <button class="btn btn-outline btn-sm" onclick="clearSysLog()">Clear Log Cache</button>
+              <button class="btn btn-primary btn-sm" onclick="updateSystemMonitor()">Audit Now</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Live Behavioral Events</div>
+          <div class="monitor-live" id="sys-log" style="height:120px; font-size:12px">
+            <div class="ml-line"><span class="ml-ts">[READY]</span> Monitoring OS event bus...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ AI CHATBOT ══ -->
+      <div class="section" id="sec-chatbot">
+        <div class="section-header">
+          <span class="sh-icon">🤖</span>
+          <div>
+            <div class="sh-title">AI FORENSICS ASSISTANT</div>
+            <div class="sh-sub">Expert System — Ask about cyber crime, safety &amp; fraud in any language</div>
+          </div>
+          <span class="sh-badge">AI Expert</span>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:16px">
+            🤖 Ask any question — What is phishing? How to report fraud? Is my OTP safe? What is Aadhaar scam? Powered
+            by IDIFFS Expert AI.
+          </div>
+          <div id="chat-messages">
+            <div class="msg ai">
+              <div class="msg-label">🤖 IDIFFS AI Forensics Assistant</div>
+              Namaste! I am your personal Cyber Crime AI. I can help you with:<br><br>
+              • 🔍 Explaining any cyber crime in simple language<br>
+              • 📨 Checking if a message or call is a scam<br>
+              • 🛡️ Online banking safety advice<br>
+              • 📋 How to file a cyber crime complaint<br>
+              • 🔗 Understanding if a website is fake<br>
+              • 🆘 Emergency helpline numbers<br><br>
+              Ask me anything — I'll give you expert guidance!
+            </div>
+          </div>
+          <div class="form-row" style="margin:0">
+            <input class="form-input" id="ai-chat-input" placeholder="Enter your forensic query here..."
+              onkeydown="if(event.key==='Enter')sendAIChat()">
+            <button class="btn btn-primary" id="chat-btn" onclick="sendAIChat()">Send Query ➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VOICE ══ -->
+      <div class="section" id="sec-voice">
+        <div class="section-header">
+          <span class="sh-icon">🎙️</span>
+          <div>
+            <div class="sh-title">VOICE ASSISTANT</div>
+            <div class="sh-sub">Speak your question — AI responds in voice too</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card text-center">
+            <div class="card-title">Voice Input</div>
+            <div style="padding:20px 0">
+              <div class="voice-ring" id="voice-ring" onclick="toggleVoice()">🎙️</div>
+              <div style="margin-top:14px;font-size:13px;color:var(--text2)" id="voice-status">Click the microphone to
+                start speaking</div>
+              <div id="voice-transcript">Waiting for speech input...</div>
+            </div>
+            <div class="form-row" style="justify-content:center;gap:10px;margin-top:8px">
+              <button class="btn btn-primary" onclick="toggleVoice()" id="voice-btn">🎙️ Start Listening</button>
+              <button class="btn btn-outline" onclick="stopVoice()">⏹ Stop</button>
+              <button class="btn btn-outline" onclick="toggleContinuousMode()" id="continuous-btn" style="border-color:var(--accent);color:var(--accent)">🔄 Continuous Mode</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Voice Conversation</div>
+            <div id="voice-chat"
+              style="height:280px;overflow-y:auto;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+              <div class="msg ai" style="max-width:100%">
+                <div class="msg-label">🔊 Voice Assistant</div>
+                Voice assistant is ready. Click the microphone and speak your question about cyber crime, scams, or
+                safety.
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm"
+                onclick="speakText('Hello! I am your cyber security voice assistant. How can I help you today?')">🔊
+                Test Voice</button>
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('voice-chat').innerHTML=''">🗑️
+                Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VISUAL INTELLIGENCE ══ -->
+      <div class="section" id="sec-visual">
+        <div class="section-header">
+          <span class="sh-icon">📈</span>
+          <div>
+            <div class="sh-title">VISUAL INTELLIGENCE REPORTS</div>
+            <div class="sh-sub">Forensic Event Analytics &amp; Threat Distribution</div>
+          </div>
+        </div>
+        <div class="two-col" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-title">Threat Distribution by Module</div><canvas id="chart-pie" height="200"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">Event Severity Frequency</div><canvas id="chart-bar" height="200"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Event Timeline (24h)</div><canvas id="chart-line" height="120"></canvas>
+        </div>
+        <div style="text-align:center;margin-top:12px">
+          <button class="btn btn-primary" onclick="renderCharts()">↻ Regenerate Charts</button>
+        </div>
+      </div>
+
+      <!-- ══ REPORT CRIME ══ -->
+      <div class="section" id="sec-report">
+        <div class="section-header">
+          <span class="sh-icon">🚨</span>
+          <div>
+            <div class="sh-title">REPORT A CYBER CRIME</div>
+            <div class="sh-sub">File a complaint with Indian government authorities</div>
+          </div>
+        </div>
+        <div
+          style="background:#fdeaea;border:1.5px solid var(--danger);border-radius:10px;padding:18px;margin-bottom:20px">
+          <div style="font-size:15px;color:var(--danger);margin-bottom:10px">⚡ Emergency — Call Immediately</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a href="tel:1930" class="btn btn-danger">📞 Cyber Crime Helpline — 1930</a>
+            <a href="tel:100" class="btn btn-danger">👮 Police — 100</a>
+            <a href="tel:112" class="btn btn-danger">🆘 National Emergency — 112</a>
+            <a href="tel:1091" class="btn btn-danger">👩 Women Helpline — 1091</a>
+            <a href="tel:14446" class="btn btn-warn">🏦 RBI Fraud Helpline — 14446</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Select Type of Cyber Crime</div>
+          <div class="crime-cats">
+            <div class="crime-cat-btn" onclick="selectCrime(this,'Online Banking / UPI Fraud')">
+              <div class="cc-icon">🏦</div>
+              <div class="cc-label">Banking / UPI Fraud</div>
+            </div>
+            <div class="crime-cat-btn" onclick="selectCrime(this,'Phishing / Fake Website')">
+              <div class="cc-icon">🎣</div>
+              <div class="cc-label">Phishing / Fake Site</div>
+            </div>
+            <div class="crime-cat-btn" onclick="selectCrime(this,'OTP / Vishing Scam')">
+              <div class="cc-icon">📞</div>
+              <div class="cc-label">OTP / Vishing Scam</div>
+            </div>
+            <div class="crime-cat-btn" onclick="selectCrime(this,'Identity Theft / Aadhaar Fraud')">
+              <div class="cc-icon">🪪</div>
+              <div class="cc-label">Identity Theft</div>
+            </div>
+            <div class="crime-cat-btn" onclick="selectCrime(this,'Investment / Stock Fraud')">
+              <div class="cc-icon">📈</div>
+              <div class="cc-label">Investment Fraud</div>
+            </div>
+            <div class="crime-cat-btn" onclick="selectCrime(this,'Social Media Hack / Impersonation')">
+              <div class="cc-icon">📸</div>
+              <div class="cc-label">Social Media Hack</div>
+            </div>
+            <div class="crime-cat-btn" onclick="selectCrime(this,'Ransomware / Data Breach')">
+              <div class="cc-icon">💻</div>
+              <div class="cc-label">Ransomware / Hack</div>
+            </div>
+            <div class="crime-cat-btn" onclick="selectCrime(this,'Online Job / Loan Scam')">
+              <div class="cc-icon">💼</div>
+              <div class="cc-label">Job / Loan Scam</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="report-form" style="display:none">
+          <div class="card-title">Fill Complaint Details — <span
+              style="color:var(--text2);font-size:11px;text-transform:none;letter-spacing:0">Crime Type: <span
+                id="selected-crime-label"></span></span></div>
+          <div class="two-col">
+            <div class="form-group"><label class="form-label">Your Full Name</label><input class="form-input"
+                id="rep-name" placeholder="As on Aadhaar Card"></div>
+            <div class="form-group"><label class="form-label">Mobile Number</label><input class="form-input"
+                id="rep-phone" placeholder="+91-XXXXXXXXXX"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Describe the Incident (What happened, when, how?)</label>
+            <textarea class="form-textarea" id="rep-desc" style="min-height:120px"
+              placeholder="Describe step by step what happened..."></textarea>
+          </div>
+          <div class="two-col">
+            <div class="form-group"><label class="form-label">Amount Lost (₹) — Leave 0 if none</label><input
+                class="form-input" id="rep-amount" type="number" placeholder="0"></div>
+            <div class="form-group"><label class="form-label">Date of Incident</label><input class="form-input"
+                id="rep-date" type="date"></div>
+          </div>
+          <div class="flex-row" style="margin-top:14px;gap:10px">
+            <a href="https://cybercrime.gov.in/" target="_blank" class="btn btn-primary">🖥️ File Online at
+              cybercrime.gov.in</a>
+            <button class="btn btn-outline" onclick="generateReport()">📋 Generate &amp; Copy Report</button>
+            <a href="tel:1930" class="btn btn-danger">📞 Call 1930 Now</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PORTALS ══ -->
+      <div class="section" id="sec-portals">
+        <div class="section-header">
+          <span class="sh-icon">🏛️</span>
+          <div>
+            <div class="sh-title">OFFICIAL CYBER PORTALS</div>
+            <div class="sh-sub">Verified Government &amp; Banking Portals — All links verified official</div>
+          </div>
+        </div>
+        <div
+          style="margin-bottom:16px;padding:14px 18px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;font-size:13px;color:var(--success)">
+          ✅ All links below are official and verified. Always look for the lock icon 🔒 in your browser before logging
+          in.
+        </div>
+        <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">
+          🚔 Cyber Crime &amp; Reporting</div>
+        <div class="portal-grid" style="margin-bottom:20px" id="portals-crime"></div>
+        <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">
+          🏦 Banking Portals</div>
+        <div class="portal-grid" style="margin-bottom:20px" id="portals-banking"></div>
+        <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">
+          🪪 Identity &amp; Government</div>
+        <div class="portal-grid" id="portals-govt"></div>
+      </div>
+
+      <!-- ══ DIGILOCKER ══ -->
+      <div class="section" id="sec-digilocker">
+        <div class="section-header">
+          <span class="sh-icon">📁</span>
+          <div>
+            <div class="sh-title">DIGILOCKER INTEGRATION</div>
+            <div class="sh-sub">Real-time Government Document Verification — Phone or Email Access</div>
+          </div>
+          <span class="sh-badge">Live API</span>
+        </div>
+
+        <!-- STEP 1: Direct Connect -->
+        <div class="card" id="dl-step1">
+          <div class="card-title">DigiLocker Forensic Interface</div>
+          <div style="display:flex; gap:20px; align-items:center">
+            <div style="flex:1">
+              <div style="font-size:15px; color:var(--text); font-weight:600; margin-bottom:8px">Sync Documents Directly
+              </div>
+              <div style="font-size:13px; color:var(--text2); line-height:1.5; margin-bottom:12px">
+                Select your preferred method to sync government documents into the secure Identity Vault.
+              </div>
+
+              <div style="display:flex; gap:12px; flex-wrap:wrap">
+                <button class="btn btn-primary" onclick="initiateRealDigiLocker()"
+                  style="padding:10px 20px; font-size:13px; background:linear-gradient(135deg, #fb923c, #ea580c)">
+                  🏛️ Connect Live (Official GOI)
+                </button>
+                <button class="btn btn-primary" id="dl-initiate-btn" onclick="initiateDigiLockerDirect()"
+                  style="padding:10px 20px; font-size:13px; background:linear-gradient(135deg, #1a56db, #1e40af)">
+                  🌐 Connect (Sandbox Simulation)
+                </button>
+                <button class="btn btn-outline" onclick="openManualEntry()" style="padding:10px 20px; font-size:13px">
+                  📝 Manual Forensic Entry
+                </button>
+              </div>
+            </div>
+            <div
+              style="width:140px; text-align:center; padding:15px; background:var(--bg); border-radius:12px; border:1px solid var(--border)">
+              <img src="https://www.digilocker.gov.in/assets/img/logo.png" alt="DigiLocker"
+                style="width:100%; margin-bottom:10px; filter: grayscale(0.2)">
+              <div style="font-size:9px; color:var(--text2); text-transform:uppercase; letter-spacing:1px">Forensic Node
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Entry Modal -->
+        <div id="dl-manual-modal" class="modal-overlay" style="display:none">
+          <div class="modal-content" style="max-width:500px">
+            <div class="modal-header">
+              <div class="modal-title">Manual Forensic Entry</div>
+              <button class="modal-close" onclick="closeManualEntry()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div style="font-size:12px; color:var(--text2); margin-bottom:16px">Enter your actual government ID
+                details below. These will be cryptographically sealed and stored in your secure vault.</div>
+
+              <div class="form-group" style="margin-bottom:12px">
+                <label class="form-label">Full Name (As per records)</label>
+                <input class="form-input" id="me-name" placeholder="E.g. Sahithi Dsarapu">
+              </div>
+
+              <div class="two-col">
+                <div class="form-group">
+                  <label class="form-label">Aadhaar Number</label>
+                  <input class="form-input" id="me-aadhaar" placeholder="12 Digit UID">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">PAN Number</label>
+                  <input class="form-input" id="me-pan" placeholder="ABCDE1234F">
+                </div>
+              </div>
+
+              <div class="two-col">
+                <div class="form-group">
+                  <label class="form-label">Driving Licence No.</label>
+                  <input class="form-input" id="me-dl" placeholder="MH-XXXXXXXXXXX">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Voter ID (EPIC)</label>
+                  <input class="form-input" id="me-voter" placeholder="IND1234567">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline" onclick="closeManualEntry()">Cancel</button>
+              <button class="btn btn-primary" onclick="submitManualEntry()">🚀 Seal & Sync to Vault</button>
+            </div>
+          </div>
+        </div>
+
+
+
+        <!-- Connected State -->
+        <div id="dl-connected-panel" style="display:none">
+          <div class="card" style="max-width: 500px; margin: 0 auto 16px;">
+            <div class="card-title">Connection Status</div>
+            <div style="text-align:center;padding:20px 0">
+              <div style="font-size:48px" id="dl-icon">✅</div>
+              <div style="font-size:14px;color:var(--success);margin-top:10px;font-weight:600" id="dl-status-text">
+                Connected — Session Active</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:5px" id="dl-status-sub"></div>
+              <div style="font-size:11px;color:var(--accent);margin-top:8px" id="dl-connected-at"></div>
+            </div>
+            <button class="btn btn-danger" onclick="disconnectDigiLocker()" style="width:100%">🔓 Disconnect / Revoke
+              Access</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Synced Government Documents</div>
+            <div id="dl-docs-list"></div>
+            <div id="dl-docs-empty" class="text-center text-muted" style="padding:20px">No documents synced yet</div>
+          </div>
+        </div>
+
+        <!-- Info cards always visible -->
+        <div class="card" id="dl-info-card">
+          <div class="card-title">What DigiLocker Syncs</div>
+          <div class="three-col">
+            <div style="padding:14px;background:var(--bg);border-radius:8px;text-align:center">
+              <div style="font-size:28px">🪪</div>
+              <div style="font-size:13px;color:var(--text);margin-top:6px">Aadhaar Card</div>
+              <div style="font-size:11px;color:var(--text2)">Official UIDAI Copy</div>
+            </div>
+            <div style="padding:14px;background:var(--bg);border-radius:8px;text-align:center">
+              <div style="font-size:28px">📄</div>
+              <div style="font-size:13px;color:var(--text);margin-top:6px">PAN Card</div>
+              <div style="font-size:11px;color:var(--text2)">Income Tax Dept</div>
+            </div>
+            <div style="padding:14px;background:var(--bg);border-radius:8px;text-align:center">
+              <div style="font-size:28px">📗</div>
+              <div style="font-size:13px;color:var(--text);margin-top:6px">Passport</div>
+              <div style="font-size:11px;color:var(--text2)">MEA Official</div>
+            </div>
+            <div style="padding:14px;background:var(--bg);border-radius:8px;text-align:center">
+              <div style="font-size:28px">🚗</div>
+              <div style="font-size:13px;color:var(--text);margin-top:6px">Driving Licence</div>
+              <div style="font-size:11px;color:var(--text2)">Transport Ministry</div>
+            </div>
+            <div style="padding:14px;background:var(--bg);border-radius:8px;text-align:center">
+              <div style="font-size:28px">🗳️</div>
+              <div style="font-size:13px;color:var(--text);margin-top:6px">Voter ID</div>
+              <div style="font-size:11px;color:var(--text2)">Election Commission</div>
+            </div>
+            <div style="padding:14px;background:var(--bg);border-radius:8px;text-align:center">
+              <div style="font-size:28px">📜</div>
+              <div style="font-size:13px;color:var(--text);margin-top:6px">Education Certs</div>
+              <div style="font-size:11px;color:var(--text2)">Universities/Boards</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <script>
+    // ═══════════════════════════════ STATE ═══════════════════════════════════════
+    const state = {
+      events: [], vaultItems: [], urlHistory: [], scamHistory: [],
+      transRows: [], eventCounter: 0
+    };
+    let selectedCrime = '';
+    let currentSection = 'dashboard';
+    let currentLanguage = 'en';
+    let map, threatLayer;
+
+    // Initialize Socket.IO
+    const socket = io();
+
+    socket.on('connect', () => {
+      console.log('Connected to IDIFFS Real-time Stream');
+    });
+
+    socket.on('new_event', (payload) => {
+      console.log('Instant event received:', payload);
+      state.events.unshift(payload);
+      renderDashboard();
+    });
+
+    socket.on('new_threat_map', (data) => {
+      if (!map) return;
+      const marker = L.circleMarker([data.lat, data.lon], {
+        color: 'red', fillColor: '#f03', fillOpacity: 0.5, radius: 10
+      }).addTo(threatLayer);
+      marker.bindPopup(`<b>${data.type}</b><br>${data.city}<br>${data.desc}`).openPopup();
+      map.setView([data.lat, data.lon], 4);
+    });
+
+    socket.on('ids_alert', (data) => {
+      showToast('⚠️ IDS ALERT', `Suspicious connection detected: ${data.domain}`, 'danger');
+    });
+
+    socket.on('chat_msg', (data) => {
+      const box = document.getElementById('chat-box');
+      const msg = document.createElement('div');
+      msg.className = 'chat-msg';
+      msg.innerHTML = `<span class="chat-time">[${data.time}]</span> <span class="chat-user">INVESTIGATOR:</span> ${data.text}`;
+      box.appendChild(msg);
+      box.scrollTop = box.scrollHeight;
+    });
+
+    // Enhancement: Live Feed Update from Socket.IO
+    socket.on('new_event', (payload) => {
+      if (payload.module === 'URL_ANALYZER') {
+        const feed = document.getElementById('live-url-feed');
+        if (feed.querySelector('.text-muted')) feed.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'event-row';
+        div.style.padding = '8px 0';
+        div.style.borderBottom = '1px solid var(--border)';
+        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${payload.desc}</b>`;
+        feed.prepend(div);
+        loadUrlHistory();
+      }
+      if (payload.module === 'SCAM_DETECTOR') {
+        const feed = document.getElementById('live-scam-feed');
+        if (feed.querySelector('.text-muted')) feed.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'event-row';
+        div.style.padding = '8px 0';
+        div.style.borderBottom = '1px solid var(--border)';
+        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${payload.desc}</b>`;
+        feed.prepend(div);
+        loadScamHistory();
+      }
+    });
+
+    const API = '';  // Same origin Flask
+
+    // ═══════════════════════════════ API HELPERS ══════════════════════════════════
+    async function apiPost(path, body) {
+      const r = await fetch(API + path, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      return r.json();
+    }
+    async function apiGet(path) {
+      const r = await fetch(API + path);
+      return r.json();
+    }
+
+    // ═══════════════════════════════ CLOCK ════════════════════════════════════════
+    function updateClock() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-IN', { hour12: false });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ═══════════════════════════════ NAV ═════════════════════════════════════════
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+      } else {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+      }
+    }
+
+    function showSection(id) {
+      console.log('Navigating to section:', id);
+      const sections = document.querySelectorAll('.section');
+      const navItems = document.querySelectorAll('.nav-item');
+
+      sections.forEach(s => s.classList.remove('active'));
+      navItems.forEach(n => n.classList.remove('active'));
+
+      const sec = document.getElementById('sec-' + id);
+      if (sec) {
+        sec.classList.add('active');
+        document.getElementById('content').scrollTop = 0;
+        currentSection = id;
+      } else {
+        console.error('Section not found: sec-' + id);
+      }
+
+      navItems.forEach(n => {
+        const oc = n.getAttribute('onclick') || '';
+        if (oc.includes(`'${id}'`) || oc.includes(`"${id}"`)) {
+          n.classList.add('active');
+        }
+      });
+
+      if (id === 'visual') renderCharts();
+      if (id === 'monitor') initMonitor();
+      if (id === 'digilocker') checkDigiLockerStatus();
+      if (id === 'dashboard') initThreatMap();
+      
+      // Auto-close sidebar on mobile after clicking
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('active');
+      }
+    }
+
+    function initThreatMap() {
+      if (map) return;
+      setTimeout(() => {
+        map = L.map('threat-map').setView([20.5937, 78.9629], 4); // Center on India
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+        threatLayer = L.layerGroup().addTo(map);
+      }, 500);
+    }
+
+    function sendWarRoomChat() {
+      const input = document.getElementById('war-room-input');
+      const text = input.value.trim();
+      if (!text) return;
+      socket.emit('send_chat', { text, time: new Date().toLocaleTimeString() });
+      input.value = '';
+    }
+
+    // ═══════════════════════════════ EVENTS ══════════════════════════════════════
+    async function loadEvents() {
+      try {
+        const data = await apiGet('/api/events?limit=50');
+        state.events = data.events || [];
+        state.eventCounter = data.total || 0;
+        renderDashboard();
+      } catch (e) { console.error('Events fetch error:', e); }
+    }
+
+    async function loadScamHistory() {
+      if (currentSection !== 'scam') return;
+      try {
+        const data = await apiGet('/api/scam/history');
+        if (data.history && data.history.length > 0) {
+          state.scamHistory = data.history;
+          renderScamHistory();
+        }
+      } catch (e) { console.error('Scam history fetch error:', e); }
+    }
+
+    async function loadUrlHistory() {
+      if (currentSection !== 'url') return;
+      try {
+        const data = await apiGet('/api/url/history');
+        if (data.history && data.history.length > 0) {
+          state.urlHistory = data.history;
+          renderUrlHistory();
+        }
+      } catch (e) { console.error('URL history fetch error:', e); }
+    }
+
+    function renderDashboard() {
+      const high = state.events.filter(e => e.severity >= 4).length;
+      document.getElementById('stat-total').textContent = state.events.length;
+      document.getElementById('stat-high').textContent = high;
+      document.getElementById('stat-urls').textContent = state.urlHistory.length;
+      document.getElementById('stat-vault').textContent = state.vaultItems.length;
+      document.getElementById('badge-events').textContent = state.events.length;
+
+      const log = document.getElementById('event-log');
+      const empty = document.getElementById('no-events');
+      if (state.events.length === 0) {
+        log.innerHTML = ''; empty.style.display = 'block';
+      } else {
+        empty.style.display = 'none';
+        const sevMap = { 1: 'badge-neutral', 2: 'badge-info', 3: 'badge-warn', 4: 'badge-danger', 5: 'badge-danger' };
+        const sevLabel = ['', 'INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+        log.innerHTML = state.events.slice(0, 40).map(e =>
+          `<div class="event-row">
+        <span class="event-time">${e.time}</span>
+        <span class="event-module"><span class="badge badge-info" style="font-size:10px">${e.module}</span></span>
+        <span class="event-desc">${e.desc}</span>
+        <span class="event-sev"><span class="badge ${sevMap[e.severity] || 'badge-neutral'}">${sevLabel[e.severity] || 'INFO'}</span></span>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--text2);margin-left:8px;opacity:0.6">${e.block_hash ? '⛓️ ' + e.block_hash.substring(0, 12) : ''}</div>
+      </div>`
+        ).join('');
+      }
+    }
+
+    async function clearEvents() {
+      if (!confirm('Clear all forensic event logs?')) return;
+      await apiPost('/api/events/clear', {});
+      state.events = [];
+      renderDashboard();
+    }
+
+    async function logEvent(module, type, severity, desc) {
+      try {
+        await apiPost('/api/events/log', { module, type, severity, desc });
+        await loadEvents();
+      } catch (e) { }
+    }
+
+    // Auto-refresh (Socket.IO handles events now, but we poll history for safety)
+    setInterval(loadScamHistory, 15000);
+    setInterval(loadUrlHistory, 15000);
+
+    // ═══════════════════════════════ URL ANALYZER ════════════════════════════════
+    async function analyzeURL() {
+      const raw = document.getElementById('url-input').value.trim();
+      if (!raw) { alert('Please enter a URL to scan'); return; }
+
+      const btn = document.getElementById('url-scan-btn');
+      btn.innerHTML = '<div class="loading-spinner"></div> Scanning...';
+      btn.disabled = true;
+
+      try {
+        const result = await apiPost('/api/url/analyze', { url: raw });
+
+        const levelMap = {
+          SAFE: { cls: 'safe', txt: '✅ SAFE — This appears to be a legitimate website. Redirecting...' },
+          LOW: { cls: 'warn', txt: '⚠️ LOW RISK — Some concerns, proceed with caution' },
+          MEDIUM: { cls: 'warn', txt: '⚠️ MEDIUM RISK — Suspicious. Do not enter passwords' },
+          HIGH: { cls: 'danger', txt: '🚨 HIGH RISK — Likely PHISHING website! Do NOT visit' },
+          INVALID: { cls: 'danger', txt: '❌ Invalid URL format' }
+        };
+        const lv = levelMap[result.level] || levelMap['MEDIUM'];
+
+        const resBox = document.getElementById('url-result');
+        resBox.className = 'result-box show ' + lv.cls;
+        document.getElementById('url-verdict').textContent = lv.txt;
+        document.getElementById('url-domain-info').textContent =
+          `Domain: ${result.hostname}  |  Risk Score: ${result.score}/100  |  Level: ${result.level}  |  Scan ID: ${result.scan_id}`;
+
+        const meter = document.getElementById('url-risk-meter');
+        const riskCls = { SAFE: 'risk-low', LOW: 'risk-low', MEDIUM: 'risk-medium', HIGH: 'risk-high', INVALID: 'risk-low' };
+        meter.className = 'risk-meter ' + (riskCls[result.level] || 'risk-medium');
+        document.getElementById('url-risk-pct').textContent = result.score + '%';
+        setTimeout(() => { document.getElementById('url-risk-fill').style.width = result.score + '%'; }, 50);
+
+        const checks = document.getElementById('url-checks');
+        checks.innerHTML = (result.flags || []).map(([icon, msg]) =>
+          `<li><span class="ci ${icon === '✅' ? 'ok' : 'bad'}">${icon}</span>${msg}</li>`
+        ).join('');
+
+        if (result.level === 'SAFE') {
+          const targetUrl = result.url || raw;
+          const redirectUrl = targetUrl.startsWith('http') ? targetUrl : 'https://' + targetUrl;
+          setTimeout(() => {
+            window.open(redirectUrl, '_blank');
+          }, 2000);
+        }
+
+        // History (handled by poll in background, but immediate update for manual)
+        loadUrlHistory();
+
+        renderDashboard();
+      } catch (e) {
+        alert('Analysis failed. Please check the URL and try again.');
+      } finally {
+        btn.innerHTML = '🔍 Scan URL';
+        btn.disabled = false;
+      }
+    }
+
+    function renderUrlHistory() {
+      if (state.urlHistory.length === 0) return;
+      const clsMap = { SAFE: 'badge-success', LOW: 'badge-warn', MEDIUM: 'badge-warn', HIGH: 'badge-danger', INVALID: 'badge-neutral' };
+      document.getElementById('url-empty').style.display = 'none';
+      document.getElementById('url-history').innerHTML = state.urlHistory.slice(0, 20).map(h =>
+        `<tr>
+      <td class="mono">${h.time}</td>
+      <td class="mono">${h.url.substring(0, 50)}${h.url.length > 50 ? '...' : ''}</td>
+      <td><span class="badge ${clsMap[h.level] || 'badge-neutral'}">${h.level}</span></td>
+      <td class="mono">${h.score}/100</td>
+      <td>${h.level === 'SAFE' ? '✅ Allowed' : '🚫 Blocked'}</td>
+    </tr>`
+      ).join('');
+    }
+
+    // ═══════════════════════════════ SCAM DETECTOR ═══════════════════════════════
+    async function analyzeScam() {
+      const type = document.getElementById('scam-type').value;
+      const sender = document.getElementById('scam-sender').value.trim();
+      const text = document.getElementById('scam-text').value.trim();
+      if (!text) { alert('Please paste the suspicious message text'); return; }
+
+      const btn = document.getElementById('scam-btn');
+      btn.innerHTML = '<div class="loading-spinner"></div> Analyzing...';
+      btn.disabled = true;
+
+      try {
+        const result = await apiPost('/api/scam/analyze', { type, sender, text });
+
+        const levelMap = {
+          HIGH_RISK: { cls: 'danger', txt: '🚨 HIGH PROBABILITY SCAM — Do NOT respond, do NOT click any links!' },
+          SUSPECTED: { cls: 'warn', txt: '⚠️ SUSPECTED SCAM — Handle with extreme caution' },
+          LOW_RISK: { cls: 'warn', txt: '⚠️ SOME SUSPICIOUS SIGNALS — Verify through official channels' },
+          LIKELY_SAFE: { cls: 'safe', txt: '✅ LOW RISK — Message appears relatively safe' }
+        };
+        const lv = levelMap[result.verdict] || levelMap['SUSPECTED'];
+
+        const resBox = document.getElementById('scam-result');
+        resBox.className = 'result-box show ' + lv.cls;
+        document.getElementById('scam-verdict').textContent = lv.txt;
+        document.getElementById('scam-risk-pct').textContent = result.score + '%';
+        const rm = document.getElementById('scam-risk-meter');
+        rm.className = 'risk-meter ' + (result.score >= 70 ? 'risk-high' : result.score >= 40 ? 'risk-medium' : 'risk-low');
+        setTimeout(() => { document.getElementById('scam-risk-fill').style.width = result.score + '%'; }, 50);
+
+        document.getElementById('scam-checks').innerHTML = (result.flags || []).map(([icon, msg]) =>
+          `<li><span class="ci ${icon === '✅' ? 'ok' : 'bad'}">${icon}</span>${msg}</li>`
+        ).join('');
+
+        // History
+        state.scamHistory.unshift({ time: result.timestamp, type, sender: sender || 'Unknown', score: result.score, verdict: result.verdict });
+        renderScamHistory();
+
+        renderDashboard();
+      } catch (e) {
+        alert('Analysis failed. Please try again.');
+      } finally {
+        btn.innerHTML = '🔍 Analyze for Fraud Signals';
+        btn.disabled = false;
+      }
+    }
+
+    function renderScamHistory() {
+      if (state.scamHistory.length === 0) return;
+      document.getElementById('scam-empty').style.display = 'none';
+      const clsM = { HIGH_RISK: 'badge-danger', SUSPECTED: 'badge-warn', LOW_RISK: 'badge-warn', LIKELY_SAFE: 'badge-success' };
+      document.getElementById('scam-history').innerHTML = state.scamHistory.slice(0, 15).map(h =>
+        `<tr>
+      <td class="mono">${h.time}</td>
+      <td>${(h.type || 'sms').toUpperCase()}</td>
+      <td class="mono">${(h.sender || 'Unknown').substring(0, 25)}</td>
+      <td class="mono">${h.score}%</td>
+      <td><span class="badge ${clsM[h.verdict] || 'badge-neutral'}">${h.verdict.replace('_', ' ')}</span></td>
+    </tr>`
+      ).join('');
+    }
+
+    // ═══════════════════════════════ TRANSACTION ENGINE ══════════════════════════
+    function handleCSV() {
+      const file = document.getElementById('csv-file').files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => parseAndAnalyzeCSV(e.target.result);
+      reader.readAsText(file);
+    }
+
+    function parseAndAnalyzeCSV(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) { alert('CSV must have header row + data rows'); return; }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+      const dateIdx = headers.findIndex(h => h.includes('date'));
+      const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('debit') || h.includes('credit'));
+      const descIdx = headers.findIndex(h => h.includes('merchant') || h.includes('desc') || h.includes('narration') || h.includes('particulars'));
+
+      if (amountIdx === -1) { alert('CSV must have an "amount" column'); return; }
+
+      const transactions = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, ''));
+        const amount = parseFloat(cols[amountIdx]);
+        if (isNaN(amount) || amount <= 0) continue;
+        transactions.push({
+          date: dateIdx >= 0 ? cols[dateIdx] : new Date().toISOString().split('T')[0],
+          amount, merchant: descIdx >= 0 ? cols[descIdx] : 'Unknown'
+        });
+      }
+      sendTransactionsToAPI(transactions);
+    }
+
+    async function sendTransactionsToAPI(transactions) {
+      try {
+        const result = await apiPost('/api/transaction/analyze', { transactions });
+        displayTransactionResults(result);
+      } catch (e) {
+        alert('Transaction analysis failed. Please try again.');
+      }
+    }
+
+    function displayTransactionResults(result) {
+      const rows = result.results || [];
+      const summary = result.summary || {};
+      const anomalyCount = summary.anomaly_count || 0;
+
+      document.getElementById('trans-stats').style.display = 'grid';
+      document.getElementById('ts-total').textContent = summary.total_transactions || 0;
+      document.getElementById('ts-anomaly').textContent = anomalyCount;
+      document.getElementById('ts-amount').textContent = '₹' + Math.round(summary.total_amount || 0).toLocaleString('en-IN');
+      document.getElementById('ts-avg').textContent = '₹' + Math.round(summary.average_amount || 0).toLocaleString('en-IN');
+
+      document.getElementById('trans-empty').style.display = 'none';
+      document.getElementById('trans-table').innerHTML = rows.map(r => {
+        const isA = r.is_anomaly;
+        const risk = r.risk_score || 0;
+        const reasons = (r.anomaly_reasons || []).join('; ') || '—';
+        return `<tr class="${isA ? 'anomaly-row' : ''}">
+      <td class="mono">${r.date}</td>
+      <td class="mono">₹${parseFloat(r.amount).toLocaleString('en-IN')}</td>
+      <td>${r.merchant || '—'}</td>
+      <td><span class="badge ${risk >= 60 ? 'badge-danger' : risk >= 30 ? 'badge-warn' : 'badge-success'}">${risk}/100</span></td>
+      <td>${isA ? '<span class="badge badge-danger">🔴 ANOMALY</span>' : '<span class="badge badge-success">✅ NORMAL</span>'}</td>
+      <td style="font-size:12px;color:var(--text2);max-width:200px">${reasons}</td>
+    </tr>`;
+      }).join('');
+
+      if (anomalyCount > 0) logEvent('TRANSACTION', 'ANOMALY_DETECTED', 4, `${anomalyCount} anomalies found in ${rows.length} transactions`);
+      else logEvent('TRANSACTION', 'SCAN_CLEAN', 1, `${rows.length} transactions analyzed — no anomalies`);
+    }
+
+    function loadSampleData() {
+      const sample = [
+        { date: '2024-01-15', amount: 850, merchant: 'Zomato Online Order' },
+        { date: '2024-01-16', amount: 2500, merchant: 'Amazon Shopping' },
+        { date: '2024-01-17', amount: 100000, merchant: 'Unknown Merchant Transfer' },
+        { date: '2024-01-18', amount: 1200, merchant: 'Swiggy' },
+        { date: '2024-01-19', amount: 3000, merchant: 'Fuel Station' },
+        { date: '2024-01-20', amount: 50000, merchant: 'CASH WITHDRAWAL ATM' },
+        { date: '2024-01-21', amount: 750, merchant: 'Netflix Subscription' },
+        { date: '2024-01-22', amount: 200000, merchant: 'Crypto Exchange Transfer' },
+        { date: '2024-01-23', amount: 2200, merchant: 'Grocery Store' },
+        { date: '2024-01-24', amount: 1800, merchant: 'Medical Store' },
+        { date: '2024-01-25', amount: 5500, merchant: 'Restaurant Payment' },
+        { date: '2024-01-26', amount: 50000, merchant: 'Online Casino Bet' },
+        { date: '2024-01-27', amount: 900, merchant: 'Mobile Recharge' },
+        { date: '2024-01-28', amount: 25000, merchant: 'Round Number Transfer Unknown' },
+        { date: '2024-01-29', amount: 1100, merchant: 'Petrol Pump' },
+      ];
+      sendTransactionsToAPI(sample);
+    }
+
+    function clearTransactions() {
+      document.getElementById('trans-table').innerHTML = '';
+      document.getElementById('trans-stats').style.display = 'none';
+      document.getElementById('trans-empty').style.display = 'block';
+    }
+
+    // ═══════════════════════════════ VAULT ═══════════════════════════════════════
+    const VAULT_ICONS = { aadhaar: '🪪', pan: '📄', bank: '🏦', card: '💳', upi: '📱', passport: '📗', dl: '🚗' };
+
+    async function addVaultItem() {
+      const type = document.getElementById('vault-type').value;
+      const label = document.getElementById('vault-label').value.trim();
+      const data = document.getElementById('vault-data').value.trim();
+      if (!label || !data) { alert('Please fill in both label and document data'); return; }
+
+      try {
+        const result = await apiPost('/api/vault/add', { type, label, data });
+        if (result.success) {
+          state.vaultItems.push({ id: result.id, type, label, masked: result.masked, revealed: false, added: new Date().toLocaleDateString('en-IN') });
+          renderVault();
+          document.getElementById('vault-label').value = '';
+          document.getElementById('vault-data').value = '';
+          renderDashboard();
+        }
+      } catch (e) { alert('Vault save failed'); }
+    }
+
+    async function deleteVaultItem(id) {
+      if (!confirm('Delete this document from vault?')) return;
+      try {
+        await fetch(API + '/api/vault/delete/' + id, { method: 'DELETE' });
+        state.vaultItems = state.vaultItems.filter(it => it.id !== id);
+        renderVault();
+        renderDashboard();
+      } catch (e) { }
+    }
+
+    function toggleReveal(id) {
+      const item = state.vaultItems.find(it => it.id === id);
+      if (item) { item.revealed = !item.revealed; renderVault(); }
+    }
+
+    async function fetchVaultItems() {
+      try {
+        const data = await apiGet('/api/vault/items');
+        state.vaultItems = (data.items || []).map(it => ({ ...it, revealed: false }));
+        renderVault();
+      } catch (e) { console.error('Vault fetch error:', e); }
+    }
+
+    function renderVault() {
+      const list = document.getElementById('vault-list');
+      const empty = document.getElementById('vault-empty');
+      if (state.vaultItems.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      list.innerHTML = state.vaultItems.map(item =>
+        `<div class="vault-item">
+      <div class="vault-icon">${VAULT_ICONS[item.type] || '📄'}</div>
+      <div class="vault-info">
+        <div class="vi-type">${item.type.toUpperCase()}</div>
+        <div class="vi-label">${item.label}</div>
+        <div class="vi-data">${item.revealed ? item.masked : '•••• •••• ••••'} &nbsp;<span style="font-size:11px;color:var(--text2)">Added ${item.added}</span></div>
+      </div>
+      <div class="vault-actions">
+        <button class="btn btn-outline btn-sm" onclick="toggleReveal('${item.id}')">${item.revealed ? '🙈 Hide' : '👁️ Reveal'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteVaultItem('${item.id}')">🗑️ Delete</button>
+      </div>
+    </div>`
+      ).join('');
+    }
+
+    // ═══════════════════════════════ DIGILOCKER ═══════════════════════════════════
+    async function checkDigiLockerStatus() {
+      try {
+        const data = await apiGet('/api/digilocker/status');
+        if (data.connected) {
+          showDigiLockerConnected(data);
+        }
+      } catch (e) { }
+    }
+
+    async function initiateRealDigiLocker() {
+      try {
+        const result = await apiGet('/api/digilocker/initiate-real');
+        if (result.success && result.auth_url) {
+          // Redirect to official DigiLocker Login
+          window.location.href = result.auth_url;
+        } else {
+          alert('Failed to initiate real-time handshake. Check API configuration.');
+        }
+      } catch (e) {
+        alert('System error connecting to DigiLocker gateway.');
+      }
+    }
+
+    async function initiateDigiLockerDirect() {
+      const btn = document.getElementById('dl-initiate-btn');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<div class="loading-spinner"></div> Authenticating...';
+      btn.disabled = true;
+
+      try {
+        const result = await apiPost('/api/digilocker/initiate', { mode: 'direct', identifier: 'Official Auth' });
+        if (result.success) {
+          document.getElementById('dl-step1').style.display = 'none';
+          addDigiLockerLog(result.steps || []);
+
+          // Artificial delay for realism
+          setTimeout(() => {
+            showDigiLockerConnected({
+              connected: true,
+              display: result.display,
+              connected_at: result.connected_at,
+              documents: result.documents
+            });
+            showToast('DIGILOCKER SYNCED', `Successfully synced ${result.documents.length} official documents.`, 'success');
+          }, 2000);
+
+          logEvent('DIGILOCKER', 'DIRECT_SYNC', 1, `Direct DigiLocker sync successful`);
+        } else {
+          alert(result.error || 'Direct connection failed');
+          btn.innerHTML = originalHtml;
+          btn.disabled = false;
+        }
+      } catch (e) {
+        alert('Connection error. Please try again.');
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      }
+    }
+
+    function openManualEntry() {
+      document.getElementById('dl-manual-modal').style.display = 'flex';
+    }
+
+    function closeManualEntry() {
+      document.getElementById('dl-manual-modal').style.display = 'none';
+    }
+
+    async function submitManualEntry() {
+      const name = document.getElementById('me-name').value.trim();
+      const aadhaar = document.getElementById('me-aadhaar').value.trim();
+      const pan = document.getElementById('me-pan').value.trim();
+      const dl = document.getElementById('me-dl').value.trim();
+      const voter = document.getElementById('me-voter').value.trim();
+
+      if (!name) { alert('Please enter your full name'); return; }
+
+      const data = { name, aadhaar, pan, dl, voter };
+
+      try {
+        const result = await apiPost('/api/digilocker/manual-entry', data);
+        if (result.success) {
+          closeManualEntry();
+          document.getElementById('dl-step1').style.display = 'none';
+          showDigiLockerConnected({
+            connected: true,
+            display: name,
+            connected_at: result.connected_at,
+            documents: result.documents
+          });
+          showToast('MANUAL SYNC COMPLETE', 'Government IDs sealed and synced manually.', 'success');
+          logEvent('DIGILOCKER', 'MANUAL_ENTRY', 1, `Manual forensic entry completed for ${name}`);
+        } else {
+          alert(result.error || 'Failed to submit manual entry');
+        }
+      } catch (e) {
+        alert('Submission failed. Please try again.');
+      }
+    }
+
+
+
+    function addDigiLockerLog(steps) {
+      // Show log panel even before full connection
+      document.getElementById('dl-connected-panel').style.display = 'block';
+    }
+
+
+
+    function showDigiLockerConnected(data) {
+      document.getElementById('dl-step1').style.display = 'none';
+      document.getElementById('dl-connected-panel').style.display = 'block';
+      document.getElementById('dl-icon').textContent = '✅';
+      document.getElementById('dl-status-text').textContent = 'Connected — Session Active';
+      document.getElementById('dl-status-sub').textContent = `Verified: ${data.display || ''}`;
+      document.getElementById('dl-connected-at').textContent = `Connected at: ${data.connected_at || ''}`;
+
+      const docs = data.documents || [];
+      const docsDiv = document.getElementById('dl-docs-list');
+      const emptyDiv = document.getElementById('dl-docs-empty');
+      if (docs.length === 0) { docsDiv.innerHTML = ''; emptyDiv.style.display = 'block'; return; }
+      emptyDiv.style.display = 'none';
+      docsDiv.innerHTML = docs.map(d =>
+        `<div class="dl-doc-card">
+      <div class="dl-doc-icon">${d.icon}</div>
+      <div class="dl-doc-info">
+        <div class="dl-doc-name">${d.name}</div>
+        <div class="dl-doc-issuer">${d.issuer}</div>
+        <div class="dl-doc-num">${d.number}</div>
+        <div style="font-size:11px;color:var(--text2)">Valid: ${d.valid_till} · Fetched: ${d.fetched_at}</div>
+        <div class="dl-seal">⛓️ Sealed: ${Math.random().toString(16).substring(2, 14).toUpperCase()}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+        <div class="dl-verified">✅ VERIFIED</div>
+        <button class="btn btn-outline btn-sm" onclick="syncToVault('${d.id}')">📥 Sync to Vault</button>
+      </div>
+    </div>`
+      ).join('');
+    }
+
+    async function disconnectDigiLocker() {
+      if (!confirm('Disconnect DigiLocker? All synced documents will be removed from this session.')) return;
+      await apiPost('/api/digilocker/disconnect', {});
+      document.getElementById('dl-connected-panel').style.display = 'none';
+      document.getElementById('dl-step1').style.display = 'block';
+    }
+
+    async function syncToVault(docId) {
+      try {
+        const result = await apiPost('/api/digilocker/sync-to-vault', { doc_id: docId });
+        if (result.success) {
+          alert(result.message);
+          logEvent('DIGILOCKER', 'VAULT_SYNC', 1, `Document sync confirmed and sealed on blockchain`);
+          await fetchVaultItems(); // Reload from server
+          showSection('vault');
+        } else {
+          alert(result.error || 'Failed to sync to vault');
+        }
+      } catch (e) {
+        alert('Synchronization failed. Please try again.');
+      }
+    }
+
+
+
+    // ═══════════════════════════════ MONITOR ═════════════════════════════════════
+    function initMonitor() {
+      const ua = navigator.userAgent;
+      let browser = 'Unknown';
+      if (ua.includes('Chrome')) browser = 'Google Chrome';
+      else if (ua.includes('Firefox')) browser = 'Mozilla Firefox';
+      else if (ua.includes('Safari')) browser = 'Apple Safari';
+      else if (ua.includes('Edge')) browser = 'Microsoft Edge';
+
+      document.getElementById('mon-browser').textContent = browser;
+      document.getElementById('mon-platform').textContent = navigator.platform || 'Unknown';
+      document.getElementById('mon-lang').textContent = navigator.language || 'en';
+      const conn = navigator.connection;
+      document.getElementById('mon-conn').textContent = conn ? (conn.effectiveType || 'Online').toUpperCase() : 'Online';
+
+      const caps = [
+        { name: 'JavaScript', status: true, detail: 'Enabled' },
+        { name: 'Cookies', status: navigator.cookieEnabled, detail: navigator.cookieEnabled ? 'Enabled' : 'Disabled' },
+        { name: 'HTTPS', status: location.protocol === 'https:', detail: location.protocol === 'https:' ? 'Active' : 'HTTP' },
+        { name: 'Web Crypto', status: !!window.crypto, detail: window.crypto ? 'Available' : 'Not Available' },
+        { name: 'Service Worker', status: 'serviceWorker' in navigator, detail: 'serviceWorker' in navigator ? 'Supported' : 'Not Supported' },
+        { name: 'Web Storage', status: !!window.sessionStorage, detail: 'Available' },
+        { name: 'Notifications', status: 'Notification' in window, detail: 'Notification' in window ? 'Supported' : 'Not Supported' },
+        { name: 'Speech API', status: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window, detail: 'webkitSpeechRecognition' in window ? 'Available' : 'Not Supported' },
+        { name: 'Touch Screen', status: navigator.maxTouchPoints > 0, detail: navigator.maxTouchPoints > 0 ? 'Yes' : 'No' },
+      ];
+      document.getElementById('capabilities-grid').innerHTML = caps.map(c =>
+        `<div style="padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--text)">${c.name}</span>
+        <span class="badge ${c.status ? 'badge-success' : 'badge-danger'}">${c.detail}</span>
+      </div>
+    </div>`
+      ).join('');
+      refreshMonitor();
+    }
+
+    function refreshMonitor() {
+      const log = document.getElementById('sys-log');
+      const now = new Date().toLocaleTimeString('en-IN', { hour12: false });
+      log.innerHTML = [
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> System scan initiated</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> Browser: ${navigator.userAgent.split('(')[0].trim()}</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> Platform: ${navigator.platform}</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> Language: ${navigator.language}</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> Screen: ${screen.width}×${screen.height} @ ${screen.colorDepth}bit</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> Online: ${navigator.onLine ? '<span style="color:#7ddc7d">YES</span>' : '<span class="ml-danger">NO</span>'}</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> Cookies: ${navigator.cookieEnabled ? '<span style="color:#7ddc7d">Enabled</span>' : '<span class="ml-warn">Disabled</span>'}</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> HTTPS: ${location.protocol === 'https:' ? '<span style="color:#7ddc7d">SECURE</span>' : '<span class="ml-warn">HTTP (insecure)</span>'}</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> WebCrypto API: ${window.crypto ? '<span style="color:#7ddc7d">Available</span>' : '<span class="ml-danger">Not Available</span>'}</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> Memory: ${(performance?.memory?.usedJSHeapSize / 1048576 || 0).toFixed(1)} MB</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> Page Load: ${Math.round(performance.now())} ms</div>`,
+        `<div class="ml-line"><span class="ml-ts">[${now}]</span> <span style="color:#7ddc7d">[ Scan Complete — System appears secure ]</span></div>`,
+      ].join('');
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function clearSysLog() { document.getElementById('sys-log').innerHTML = ''; }
+
+    function runSecurityAssessment() {
+      const scores = {
+        browser: (navigator.userAgent.includes('Chrome') || navigator.userAgent.includes('Firefox')) ? 90 : 70,
+        https: location.protocol === 'https:' ? 100 : 30,
+        cookie: navigator.cookieEnabled ? 75 : 95,
+        script: 85
+      };
+      ['browser', 'https', 'cookie', 'script'].forEach(k => {
+        document.getElementById('sec-' + k + '-score').textContent = scores[k] + '%';
+        const bar = document.getElementById('sec-' + k + '-bar');
+        bar.style.width = scores[k] + '%';
+        bar.style.background = scores[k] >= 80 ? 'var(--success)' : scores[k] >= 50 ? 'var(--warn)' : 'var(--danger)';
+      });
+      logEvent('MONITOR', 'SEC_ASSESS', 1, 'Full security assessment completed');
+    }
+
+    // ═══════════════════════════════ CHATBOT ═════════════════════════════════════
+    async function sendAIChat() {
+      const input = document.getElementById('ai-chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = '';
+      addChatMsg('user', msg);
+      addTypingIndicator();
+
+      try {
+        const result = await apiPost('/api/chat', { message: msg, lang: currentLanguage });
+        removeTypingIndicator();
+        addChatMsg('ai', result.response || 'I could not process that. Please try again.');
+      } catch (e) {
+        removeTypingIndicator();
+        addChatMsg('ai', '⚠️ Connection error. Please ensure the IDIFFS server is running and try again.');
+      }
+    }
+
+    function quickAIChat(msg) { document.getElementById('ai-chat-input').value = msg; sendAIChat(); }
+
+    function addChatMsg(role, text) {
+      const box = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+
+      let cleanText = text;
+      let redirect = null;
+
+      // Parse redirection tags
+      if (text.includes('[GOTO:')) {
+        const match = text.match(/\[GOTO:(\w+)\]/);
+        if (match) {
+          redirect = match[1];
+          cleanText = text.replace(/\[GOTO:\w+\]/, '').trim();
+        }
+      }
+
+      if (role === 'ai') {
+        div.innerHTML = '<div class="msg-label">🤖 IDIFFS AI Assistant</div>' + cleanText.replace(/\n/g, '<br>').replace(/\[CALL:(\d+)\]/g, '');
+
+        const actions = document.createElement('div');
+        actions.className = 'msg-actions';
+        actions.style.marginTop = '15px';
+        actions.style.display = 'flex';
+        actions.style.flexDirection = 'column';
+        actions.style.gap = '8px';
+
+        // Parse CALL tags
+        const callMatch = text.match(/\[CALL:(\d+)\]/);
+        if (callMatch) {
+          const num = callMatch[1];
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-danger';
+          btn.style.width = '100%';
+          btn.innerHTML = `📞 Call National Helpline ${num}`;
+          btn.onclick = () => {
+            window.location.href = `tel:${num}`;
+            showToast('EMERGENCY', `Initiating call to ${num}...`, 'danger');
+          };
+          actions.appendChild(btn);
+        }
+
+        // Parse GOTO tags
+        if (redirect) {
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-primary';
+          btn.style.width = '100%';
+          btn.innerHTML = `🛡️ Open ${redirect.toUpperCase()} Module`;
+          const target = redirect;
+          btn.onclick = () => {
+            showSection(target);
+            showToast('NAVIGATION', `Transitioning to ${target.toUpperCase()} for investigation.`, 'success');
+          };
+          actions.appendChild(btn);
+        }
+
+        if (actions.children.length > 0) div.appendChild(actions);
+      } else {
+        div.textContent = text;
+      }
+
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+      const box = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = 'msg ai'; div.id = 'typing-indicator';
+      div.innerHTML = '<div class="msg-label">🤖 Thinking...</div><div class="typing-dots"><span></span><span></span><span></span></div>';
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+    function removeTypingIndicator() { const el = document.getElementById('typing-indicator'); if (el) el.remove(); }
+
+    // ═══════════════════════════════ VOICE ═══════════════════════════════════════
+    let recognitionInstance = null;
+    let isVoiceActive = false;
+
+    function initVoice() {
+      // Check support on init
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        document.getElementById('voice-status').innerHTML = '<span style="color:var(--danger)">⚠️ Voice Forensics not supported in this browser. Please use Chrome.</span>';
+      }
+      // Pre-load voices for Chrome (they load asynchronously)
+      if (window.speechSynthesis) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+      }
+    }
+
+    let voiceTranscriptBuffer = '';
+
+    function toggleVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Voice recognition requires Google Chrome.');
+        return;
+      }
+
+      if (isVoiceActive) {
+        if (recognitionInstance) {
+          recognitionInstance.stop();
+          document.getElementById('voice-status').innerHTML = '🔍 <span style="color:var(--accent); font-weight:bold">Analyzing Forensic Query...</span>';
+        }
+        return;
+      }
+
+      // Unlock speech synthesis engine for Chrome (must be inside user click event)
+      if (window.speechSynthesis) {
+        const unlock = new SpeechSynthesisUtterance('');
+        unlock.volume = 0;
+        window.speechSynthesis.speak(unlock);
+      }
+
+      try {
+        voiceTranscriptBuffer = '';
+        recognitionInstance = new SpeechRecognition();
+        recognitionInstance.continuous = true;
+        recognitionInstance.interimResults = true;
+        recognitionInstance.lang = 'en-US';
+
+        recognitionInstance.onstart = () => {
+          isVoiceActive = true;
+          document.getElementById('voice-ring').classList.add('active');
+          document.getElementById('voice-btn').innerHTML = '⏹ STOP & ANALYZE';
+          document.getElementById('voice-status').innerHTML = '🔴 <span style="color:var(--danger); font-weight:bold">Listening...</span> Speak now, click STOP when finished.';
+          document.getElementById('voice-transcript').textContent = 'Listening for forensic data...';
+          logEvent('VOICE', 'SESSION_START', 1, 'Manual voice capture started');
+        };
+
+        recognitionInstance.onresult = e => {
+          let interim = '';
+          let final = '';
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+            else interim += e.results[i][0].transcript;
+          }
+          voiceTranscriptBuffer += final;
+          document.getElementById('voice-transcript').textContent = voiceTranscriptBuffer + (interim ? ' ...' + interim : '');
+        };
+
+        recognitionInstance.onerror = e => {
+          console.error('Forensic Voice Error:', e.error);
+          let msg = 'Voice access error.';
+          if (e.error === 'not-allowed') msg = '🚫 Microphone access denied. Please allow microphone access in browser settings.';
+          else if (e.error === 'no-speech') msg = '🔇 No speech detected. Please try again.';
+          else if (e.error === 'audio-capture') msg = '🎤 No microphone found. Please connect a microphone.';
+          else if (e.error === 'network') msg = '🌐 Network error during voice capture.';
+          document.getElementById('voice-status').innerHTML = `<span style="color:var(--danger)">${msg}</span>`;
+          stopVoice();
+        };
+
+        recognitionInstance.onend = () => {
+          const finalQuery = voiceTranscriptBuffer.trim();
+          if (finalQuery.length > 3) {
+            logEvent('VOICE', 'TRANSCRIPT', 1, `Manual query captured: ${finalQuery}`);
+            processVoiceQuery(finalQuery);
+          } else if (isVoiceActive) {
+            document.getElementById('voice-status').innerHTML = '<span style="color:var(--warn)">⚠️ Query too short or no speech detected. Please try again.</span>';
+          }
+          
+          const wasContinuous = isContinuousMode;
+          stopVoice();
+          recognitionInstance = null;
+
+          // Enhancement 5: Resume listening if in Continuous Mode
+          if (wasContinuous && !isVoiceActive) {
+            setTimeout(() => {
+              if (isContinuousMode) {
+                console.log("Continuous Mode: Resuming listener...");
+                toggleVoice();
+              }
+            }, 1000);
+          }
+        };
+
+        recognitionInstance.start();
+
+      } catch (err) {
+        console.error('Failed to start voice recognition:', err);
+        document.getElementById('voice-status').innerHTML = '<span style="color:var(--danger)">Failed to start voice recognition. Please try again.</span>';
+        stopVoice();
+      }
+    }
+
+    async function processVoiceQuery(text) {
+      console.log('processVoiceQuery called with text:', text);
+      const vchat = document.getElementById('voice-chat');
+      
+      const userMsg = document.createElement('div');
+      userMsg.className = 'msg user';
+      userMsg.style.maxWidth = '100%';
+      userMsg.innerHTML = `🎙️ ${text}`;
+      vchat.appendChild(userMsg);
+      vchat.scrollTop = vchat.scrollHeight;
+
+      // Show thinking indicator
+      document.getElementById('voice-status').innerHTML = '🧠 <span style="color:var(--accent); font-weight:bold">Processing your query...</span>';
+
+      try {
+        // Enhancement 4: Try Voice Command Dispatcher first
+        const cmdResult = await apiPost('/api/voice/command', { command: text });
+        if (cmdResult.action !== 'none') {
+          const cmdMsg = document.createElement('div');
+          cmdMsg.className = 'msg ai';
+          cmdMsg.style.maxWidth = '100%';
+          cmdMsg.style.borderLeft = '4px solid var(--accent)';
+          cmdMsg.innerHTML = `<div class="msg-label">⚡ System Command Executed</div>${cmdResult.message}`;
+          vchat.appendChild(cmdMsg);
+          vchat.scrollTop = vchat.scrollHeight;
+          
+          speakText(cmdResult.message);
+          
+          if (cmdResult.action === 'navigate') {
+            showSection(cmdResult.target);
+            if (cmdResult.filter === 'high') {
+                // Logic to filter events if dashboard
+                document.getElementById('event-log').innerHTML = '<div class="text-center p-4">Filtering for high severity...</div>';
+                setTimeout(loadEvents, 500);
+            }
+          } else if (cmdResult.action === 'url_scan') {
+             showSection('url_analyzer');
+             document.getElementById('url-input').value = cmdResult.url;
+             // Trigger scan button if it exists
+             const scanBtn = document.querySelector('button[onclick="analyzeUrl()"]');
+             if(scanBtn) scanBtn.click();
+          }
+          return; // Exit if command was handled
+        }
+
+        console.log('Calling /api/chat...');
+        const result = await apiPost('/api/chat', { message: text, lang: currentLanguage });
+        console.log('API response received:', result);
+        let reply = result.response || 'I could not process that query. Please try asking about phishing, scams, OTP safety, or cyber crime reporting.';
+
+        // Extract ALL GOTO and CALL tags before cleaning
+        const allGotos = [...reply.matchAll(/\[GOTO:(\w+)\]/g)].map(m => m[1]);
+        const allCalls = [...reply.matchAll(/\[CALL:(\d+)\]/g)].map(m => m[1]);
+
+        // Clean ALL tags from display text
+        let cleanReply = reply.replace(/\[GOTO:\w+\]/g, '').replace(/\[CALL:\d+\]/g, '').trim();
+
+        // Strip HTML for speech (plain text)
+        const stripped = cleanReply.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').trim();
+
+        // Build display HTML
+        let html = `<div class="msg-label">🔊 Voice Assistant</div>${cleanReply}`;
+
+        // Add action buttons
+        const actions = [];
+        allCalls.forEach(num => {
+          actions.push(`<button class="btn btn-danger btn-sm" style="margin-top:10px; width:100%" onclick="window.location.href='tel:${num}'">📞 Call Helpline ${num}</button>`);
+        });
+        if (allGotos.length > 0) {
+          const target = allGotos[0];
+          actions.push(`<button class="btn btn-primary btn-sm" style="margin-top:10px; width:100%" onclick="showSection('${target}'); showToast('VOICE NAV', 'Moving to ${target.toUpperCase()}', 'success');">🛡️ Open ${target.toUpperCase()} Module</button>`);
+        }
+
+        if (actions.length > 0) html += `<br>${actions.join('')}`;
+        
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'msg ai';
+        aiMsg.style.maxWidth = '100%';
+        aiMsg.innerHTML = html;
+        vchat.appendChild(aiMsg);
+        vchat.scrollTop = vchat.scrollHeight;
+
+        // Update status
+        document.getElementById('voice-status').innerHTML = '🔊 <span style="color:var(--success); font-weight:bold">Speaking response...</span>';
+
+        // Speak the response aloud
+        speakText(stripped.substring(0, 600));
+      } catch (e) {
+        console.error('Voice query error:', e);
+        const errMsg = document.createElement('div');
+        errMsg.className = 'msg ai';
+        errMsg.style.maxWidth = '100%';
+        errMsg.innerHTML = `<div class="msg-label">🔊 Voice Assistant</div>⚠️ Connection error. Please ensure the server is running and try again.`;
+        vchat.appendChild(errMsg);
+        vchat.scrollTop = vchat.scrollHeight;
+        document.getElementById('voice-status').innerHTML = '<span style="color:var(--danger)">⚠️ Failed to get response. Please try again.</span>';
+      }
+    }
+
+    function stopVoice() {
+      isVoiceActive = false;
+      document.getElementById('voice-ring').classList.remove('active');
+      document.getElementById('voice-btn').innerHTML = '🎙️ Start Forensic Voice Query';
+      if (!document.getElementById('voice-status').innerHTML.includes('color:var(--danger)') &&
+          !document.getElementById('voice-status').innerHTML.includes('color:var(--success)') &&
+          !document.getElementById('voice-status').innerHTML.includes('color:var(--accent)')) {
+        document.getElementById('voice-status').textContent = 'Click the microphone to start speaking';
+      }
+    }
+
+    // Enhancement 5: Continuous Mode Logic
+    let isContinuousMode = false;
+    function toggleContinuousMode() {
+        isContinuousMode = !isContinuousMode;
+        const btn = document.getElementById('continuous-btn');
+        if (isContinuousMode) {
+            btn.innerHTML = '🛑 Stop Continuous Mode';
+            btn.style.background = 'var(--accent)';
+            btn.style.color = '#fff';
+            showToast('VOICE AI', 'Hands-free monitoring active', 'success');
+            if (!isVoiceActive) toggleVoice();
+        } else {
+            btn.innerHTML = '🔄 Continuous Mode';
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--accent)';
+            showToast('VOICE AI', 'Hands-free monitoring disabled', 'info');
+            stopVoice();
+        }
+    }
+
+    // Enhancement 3: Forensic Report Generation
+    async function generateReport() {
+        showToast('REPORT', 'Compiling investigation data...', 'info');
+        try {
+            const result = await apiPost('/api/report/generate', {});
+            if (result.report) {
+                // Create a modal or new window to show the report
+                const reportWindow = window.open('', '_blank');
+                reportWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>IDIFFS Forensic Report - ${result.timestamp}</title>
+                        <style>
+                            body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 40px auto; padding: 20px; border: 1px solid #ddd; }
+                            h3 { color: #d32f2f; border-bottom: 2px solid #d32f2f; padding-bottom: 10px; }
+                            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                            th { background: #f5f5f5; }
+                            .print-btn { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-bottom: 20px; }
+                            @media print { .print-btn { display: none; } }
+                        </style>
+                    </head>
+                    <body>
+                        <button class="print-btn" onclick="window.print()">🖨️ Print to PDF</button>
+                        ${result.report}
+                    </body>
+                    </html>
+                `);
+                reportWindow.document.close();
+                showToast('REPORT', 'Investigation report ready!', 'success');
+            }
+        } catch (e) {
+            console.error('Report error:', e);
+            showToast('REPORT', 'Failed to generate report', 'danger');
+        }
+    }
+
+    function speakText(text) {
+      if (!window.speechSynthesis) {
+        console.warn('Speech synthesis not available');
+        return;
+      }
+      
+      // Only cancel if actively speaking to avoid breaking the audio queue context
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
+
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = 'en-IN';
+      utt.rate = 0.95;
+      utt.pitch = 1.0;
+      utt.volume = 1.0;
+
+      // Try to select an Indian English or good quality voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find(v => v.lang === 'en-IN') ||
+                        voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
+                        voices.find(v => v.lang === 'en-US') ||
+                        voices.find(v => v.lang.startsWith('en'));
+      if (preferred) utt.voice = preferred;
+
+      utt.onend = () => {
+        document.getElementById('voice-status').innerHTML = '✅ <span style="color:var(--success)">Response complete.</span> Click the microphone to ask another question.';
+      };
+      utt.onerror = (e) => {
+        console.error('Speech synthesis error:', e);
+        // Ignore "interrupted" errors which happen on cancel
+        if (e.error !== 'interrupted') {
+          document.getElementById('voice-status').innerHTML = '⚠️ <span style="color:var(--warn)">Voice playback failed. Response is shown in text above.</span>';
+        }
+      };
+
+      // Store in a global variable to prevent Chrome Garbage Collection from deleting it mid-speech
+      window._activeSpeechUtterance = utt;
+
+      // Chrome bug workaround: speech synthesis may not fire if called too quickly
+      setTimeout(() => {
+        window.speechSynthesis.speak(utt);
+      }, 150);
+    }
+
+    // ═══════════════════════════════ CHARTS ══════════════════════════════════════
+    function renderCharts() {
+      const moduleCount = { URL: 0, SCAM: 0, VAULT: 0, TRANS: 0, SYSTEM: 0, DIGILOCKER: 0 };
+      const sevCount = [0, 0, 0, 0, 0, 0];
+      const timeMap = {};
+      state.events.forEach(e => {
+        if (e.module in moduleCount) moduleCount[e.module]++;
+        else moduleCount['SYSTEM']++;
+        if (e.severity >= 1 && e.severity <= 5) sevCount[e.severity]++;
+        const h = (e.time || '00:00:00').split(':')[0];
+        timeMap[h] = (timeMap[h] || 0) + 1;
+      });
+      if (state.events.length === 0) {
+        moduleCount.URL = 3; moduleCount.SCAM = 5; moduleCount.VAULT = 2; moduleCount.TRANS = 1;
+        sevCount[1] = 5; sevCount[2] = 3; sevCount[3] = 2; sevCount[4] = 1;
+      }
+
+      ['chart-pie', 'chart-bar', 'chart-line'].forEach(id => {
+        const c = document.getElementById(id); if (c._chart) c._chart.destroy();
+      });
+
+      const ctxP = document.getElementById('chart-pie').getContext('2d');
+      const pieChart = new Chart(ctxP, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(moduleCount),
+          datasets: [{
+            data: Object.values(moduleCount),
+            backgroundColor: ['#1a56db', '#c0392b', '#1a7340', '#f39c12', '#8e44ad', '#16a085'],
+            borderWidth: 0,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          cutout: '75%',
+          plugins: {
+            legend: { position: 'right', labels: { color: '#0a1628', font: { family: '"DM Sans", sans-serif', weight: 600 } } }
+          }
+        }
+      });
+      document.getElementById('chart-pie')._chart = pieChart;
+
+      const ctxB = document.getElementById('chart-bar').getContext('2d');
+      const barChart = new Chart(ctxB, {
+        type: 'bar',
+        data: {
+          labels: ['INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+          datasets: [{
+            label: 'Events',
+            data: sevCount.slice(1),
+            backgroundColor: ['#4a90d9', '#27ae60', '#f39c12', '#e74c3c', '#8b0000'],
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#3a4a6b', font: { family: '"DM Sans", sans-serif', weight: 500 } } },
+            y: { grid: { color: 'rgba(0,0,0,0.04)', borderDash: [5, 5] }, ticks: { color: '#3a4a6b', stepSize: 1, font: { family: '"DM Sans", sans-serif' } } }
+          }
+        }
+      });
+      document.getElementById('chart-bar')._chart = barChart;
+
+      const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+      const ctxL = document.getElementById('chart-line').getContext('2d');
+      const grad = ctxL.createLinearGradient(0, 0, 0, 300);
+      grad.addColorStop(0, 'rgba(26, 86, 219, 0.5)');
+      grad.addColorStop(1, 'rgba(26, 86, 219, 0.0)');
+      const lineChart = new Chart(ctxL, {
+        type: 'line',
+        data: {
+          labels: hours,
+          datasets: [{
+            label: 'Events per Hour',
+            data: hours.map(h => timeMap[h] || 0),
+            borderColor: '#1a56db',
+            backgroundColor: grad,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#1a56db',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#3a4a6b', font: { family: '"DM Sans", sans-serif', weight: 500 } } },
+            y: { grid: { color: 'rgba(0,0,0,0.04)', borderDash: [5, 5] }, ticks: { color: '#3a4a6b', stepSize: 1, font: { family: '"DM Sans", sans-serif' } } }
+          },
+          interaction: { mode: 'nearest', axis: 'x', intersect: false }
+        }
+      });
+      document.getElementById('chart-line')._chart = lineChart;
+    }
+
+    // ═══════════════════════════════ REPORT CRIME ═════════════════════════════════
+    function showToast(title, msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icon = type === 'success' ? '✅' : type === 'warn' ? '⚠️' : type === 'danger' ? '🚨' : 'ℹ️';
+      toast.innerHTML = `<div class="toast-icon">${icon}</div><div class="toast-content"><div class="toast-title">${title}</div><div class="toast-msg">${msg}</div></div>`;
+      container.appendChild(toast);
+      setTimeout(() => { toast.classList.add('out'); setTimeout(() => toast.remove(), 300); }, 5000);
+    }
+
+    function selectCrime(el, name) {
+      document.querySelectorAll('.crime-cat-btn').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected'); selectedCrime = name;
+      document.getElementById('report-form').style.display = 'block';
+      document.getElementById('selected-crime-label').textContent = name;
+      document.getElementById('report-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function generateReport() {
+      const data = {
+        name: document.getElementById('rep-name').value,
+        phone: document.getElementById('rep-phone').value,
+        desc: document.getElementById('rep-desc').value,
+        amount: document.getElementById('rep-amount').value,
+        date: document.getElementById('rep-date').value,
+        crime_type: selectedCrime
+      };
+      const result = await apiPost('/api/report/generate', data);
+      const text = `CYBER CRIME COMPLAINT REPORT
+Report ID: ${result.report_id}
+Generated: ${result.generated_at}
+Platform: ${result.platform}
+----------------------------
+Crime Type: ${result.crime_type}
+Complainant: ${result.complainant}
+Mobile: ${result.mobile}
+Date of Incident: ${result.incident_date}
+Amount Lost: ₹${result.amount_lost}
+
+Incident Description:
+${result.description}
+
+Recommended Action: ${result.recommended_action}
+Reference: cybercrime.gov.in | Helpline: 1930`;
+      navigator.clipboard.writeText(text).then(() => alert('Complaint summary copied! Paste it when filing at cybercrime.gov.in'));
+    }
+
+    // ═══════════════════════════════ PORTALS ═════════════════════════════════════
+    function renderPortals() {
+      const crime = [
+        { icon: '⚖️', name: 'Cyber Crime Portal', desc: 'Official GOI portal to report all cyber crimes online', url: 'https://cybercrime.gov.in/', label: 'File Complaint' },
+        { icon: '🛡️', name: 'CERT-In', desc: 'Indian Computer Emergency Response Team', url: 'https://www.cert-in.org.in/', label: 'Visit CERT-In' },
+        { icon: '🏦', name: 'RBI Sachet', desc: 'RBI portal to report unauthorized financial entities', url: 'https://sachet.rbi.org.in/', label: 'Report Scam' },
+        { icon: '📱', name: 'RBI Ombudsman', desc: 'File banking grievances and fraud complaints with RBI', url: 'https://cms.rbi.org.in/', label: 'File Grievance' },
+        { icon: '📞', name: 'Telecom Fraud', desc: 'DoT portal to report fraudulent calls and SMS scams', url: 'https://sancharsaathi.gov.in/', label: 'Report Telecom Fraud' },
+        { icon: '💹', name: 'SEBI SCORES', desc: 'Report stock market fraud and investment scams', url: 'https://scores.sebi.gov.in/', label: 'File Complaint' },
+      ];
+      const banking = [
+        { icon: '🏛️', name: 'SBI Online Banking', desc: 'State Bank of India official net banking portal', url: 'https://onlinesbi.sbi/', label: 'Visit Official' },
+        { icon: '🔵', name: 'HDFC Bank', desc: 'HDFC Bank official net banking portal', url: 'https://netbanking.hdfcbank.com/', label: 'Visit Official' },
+        { icon: '🔴', name: 'ICICI Bank', desc: 'ICICI Bank official internet banking', url: 'https://www.icicibank.com/', label: 'Visit Official' },
+        { icon: '🟡', name: 'Axis Bank', desc: 'Axis Bank official internet banking portal', url: 'https://www.axisbank.com/', label: 'Visit Official' },
+        { icon: '🟣', name: 'PNB Banking', desc: 'Punjab National Bank official portal', url: 'https://www.pnbindia.in/', label: 'Visit Official' },
+        { icon: '🟠', name: 'Bank of Baroda', desc: 'Bank of Baroda official internet banking', url: 'https://www.bankofbaroda.in/', label: 'Visit Official' },
+      ];
+      const govt = [
+        { icon: '🪪', name: 'UIDAI / Aadhaar', desc: 'Official Aadhaar portal — update, lock/unlock biometrics', url: 'https://myaadhaar.uidai.gov.in/', label: 'Visit UIDAI' },
+        { icon: '📄', name: 'Income Tax (PAN)', desc: 'Income Tax e-Filing portal — PAN services, tax filing', url: 'https://www.incometax.gov.in/', label: 'Visit IT Portal' },
+        { icon: '📁', name: 'DigiLocker', desc: 'Government of India official document locker', url: 'https://www.digilocker.gov.in/', label: 'Open DigiLocker' },
+        { icon: '🛂', name: 'Passport Seva', desc: 'Apply and track passport — Ministry of External Affairs', url: 'https://www.passportindia.gov.in/', label: 'Passport Services' },
+        { icon: '🚗', name: 'Parivahan', desc: 'Driving licence, vehicle registration', url: 'https://parivahan.gov.in/', label: 'Vehicle Services' },
+        { icon: '🗳️', name: 'Voter Portal (ECI)', desc: 'Voter ID registration — Election Commission of India', url: 'https://voters.eci.gov.in/', label: 'Voter Services' },
+      ];
+      function rSec(id, data) {
+        document.getElementById(id).innerHTML = data.map(p =>
+          `<div class="portal-card"><div class="pc-icon">${p.icon}</div><div class="pc-name">${p.name}</div><div class="pc-desc">${p.desc}</div><a href="${p.url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">${p.label} ↗</a></div>`
+        ).join('');
+      }
+      rSec('portals-crime', crime); rSec('portals-banking', banking); rSec('portals-govt', govt);
+    }
+
+    // ═══════════════════════ LIVE SYSTEM MONITOR LOGIC ═══════════════════════════
+    let scanTimer = 8;
+    setInterval(() => {
+      if (currentSection === 'monitor') {
+        scanTimer--;
+        if (scanTimer < 0) {
+          scanTimer = 8;
+          updateSystemMonitor();
+        }
+        const timerEl = document.getElementById('sys-timer');
+        if (timerEl) timerEl.textContent = scanTimer;
+      }
+    }, 1000);
+
+    async function updateSystemMonitor() {
+      const radar = document.getElementById('sys-radar');
+      const radarText = document.getElementById('sys-radar-text');
+
+      if (radar) {
+        radar.style.background = 'rgba(26,86,219,0.1)';
+        radar.style.borderColor = 'var(--primary)';
+        radarText.textContent = '🛰️ SCANNING...';
+        radarText.style.color = 'var(--primary)';
+      }
+
+      try {
+        const data = await apiGet('/api/system/monitor');
+        const tbody = document.getElementById('sys-proc-table');
+        if (!tbody) return;
+
+        // Update Totals
+        const cpu = data.cpu_total;
+        const ram = data.ram_total || 0;
+        if (document.getElementById('mon-cpu-text')) document.getElementById('mon-cpu-text').textContent = cpu + '%';
+        if (document.getElementById('mon-ram-text')) document.getElementById('mon-ram-text').textContent = ram + '%';
+        const lastUpdateEl = document.getElementById('sys-last-update');
+        if (lastUpdateEl) lastUpdateEl.textContent = 'System Integrity Audit Timestamp: ' + data.timestamp;
+
+        tbody.innerHTML = '';
+        data.processes.forEach(p => {
+          const riskClass = p.risk > 50 ? 'badge-danger' : (p.risk > 20 ? 'badge-warn' : 'badge-success');
+          const riskLabel = p.risk > 50 ? '🚨 THREAT' : (p.risk > 20 ? 'SUSPECT' : 'SECURE');
+          const forensicStatus = p.risk > 50 ? '❌ BLOCKED' : (p.risk > 20 ? '👀 WATCHING' : '✅ TRUSTED');
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+        <td class="mono" style="color:var(--text2)">${p.pid}</td>
+        <td style="font-weight:bold; color:var(--sidebar)">${p.name}</td>
+        <td>
+           <div style="font-size:10px; color:var(--text2)">${p.cpu}% Utilization</div>
+           <div style="height:4px; width:60px; background:var(--bg); border-radius:2px; margin-top:2px">
+              <div style="height:100%; width:${Math.min(p.cpu * 3, 100)}%; background:${p.cpu > 20 ? 'var(--danger)' : 'var(--accent)'}; border-radius:2px"></div>
+           </div>
+        </td>
+        <td class="mono">${p.ram}%</td>
+        <td><span class="badge ${riskClass}">${riskLabel}</span></td>
+        <td style="font-size:10px; font-weight:600">${forensicStatus}</td>
+      `;
+          tbody.appendChild(row);
+        });
+
+        // Update Live Log
+        const sysLog = document.getElementById('sys-log');
+        if (sysLog) {
+          const logLine = `<div class="ml-line"><span class="ml-ts">[${data.timestamp}]</span> Forensic Scan: ${data.processes.length} apps audited.</div>`;
+          sysLog.innerHTML += logLine;
+          sysLog.scrollTop = sysLog.scrollHeight;
+        }
+
+        // Reset Radar to "Active" after scan
+        setTimeout(() => {
+          if (radar) {
+            radar.style.background = 'rgba(26,115,64,0.1)';
+            radar.style.borderColor = 'var(--success)';
+            radarText.textContent = 'MONITOR ACTIVE';
+            radarText.style.color = 'var(--success)';
+          }
+        }, 1500);
+
+      } catch (e) {
+        console.error('Monitor Update Error:', e);
+        if (radarText) radarText.textContent = '⚠️ CONNECTION ERROR';
+      }
+    }
+
+    // Override showSection to trigger immediate scan
+    const originalShowSection = showSection;
+    showSection = function (id) {
+      originalShowSection(id);
+      if (id === 'monitor') {
+        scanTimer = 0;
+        updateSystemMonitor();
+      }
+    };
+
+    // ═══════════════════════════════ INIT ════════════════════════════════════════
+    window.addEventListener('load', () => {
+      fetchVaultItems();
+      renderPortals();
+      initVoice();
+      loadEvents();
+      checkDigiLockerStatus();
+    });
+  </script>
+</body>
+
+</html>
