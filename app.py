@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import eventlet
+eventlet.monkey_patch()
+
 """
 IDIFFS — Integrated Digital Intelligence & Forensic Security System
+
 Professional Cyber Crime Intelligence Platform
 Government-grade application for cyber forensics and crime detection
 """
