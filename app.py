@@ -18,7 +18,12 @@ import logging
 import threading
 import subprocess
 from flask_socketio import SocketIO, emit
-from scapy.all import sniff, IP, TCP, DNS, DNSQR
+try:
+    from scapy.all import sniff, IP, TCP, DNS, DNSQR
+    HAS_SCAPY = True
+except ImportError:
+    HAS_SCAPY = False
+
 import time as time_module
 import requests
 import urllib.parse
@@ -1567,7 +1572,8 @@ def ids_sniffer_thread():
     logger.info("IDS: Real-time network sniffer initialized.")
     
     def packet_callback(packet):
-        if not IDS_ACTIVE: return
+        if not IDS_ACTIVE or not HAS_SCAPY: return
+
         
         # Monitor DNS Queries
         if packet.haslayer(DNS) and packet.getlayer(DNS).qr == 0:
@@ -1579,10 +1585,14 @@ def ids_sniffer_thread():
                     socketio.emit('ids_alert', {'domain': query, 'type': 'DNS_PHISH'})
 
     try:
-        # Note: Sniffing on Windows requires Npcap/WinPcap
-        sniff(prn=packet_callback, store=0, filter="udp port 53")
+        if HAS_SCAPY:
+            # Note: Sniffing on Windows requires Npcap/WinPcap
+            sniff(prn=packet_callback, store=0, filter="udp port 53")
+        else:
+            logger.warning("IDS: Scapy not installed. Sniffer disabled.")
     except Exception as e:
-        logger.error(f"IDS Sniffer failed (usually requires Npcap): {e}")
+        logger.error(f"IDS Sniffer failed: {e}")
+
 
 @socketio.on('send_chat')
 def handle_chat(data):
