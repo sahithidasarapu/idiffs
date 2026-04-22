@@ -4,10 +4,8 @@ Provides real ML-based threat detection for URL analysis, scam detection,
 and transaction anomaly detection using scikit-learn models with feature engineering.
 """
 
-try:
-    import numpy as np
-except ImportError:
-    np = None
+import statistics
+
 import re
 import math
 import hashlib
@@ -371,13 +369,24 @@ def analyze_transactions(transactions: list) -> list:
             t['risk_score'] = 0
         return transactions
 
-    arr = np.array(amounts)
-    mean = np.mean(arr)
-    std = np.std(arr) if np.std(arr) > 0 else 1
-    q1 = np.percentile(arr, 25)
-    q3 = np.percentile(arr, 75)
+    # Pure Python statistics to avoid heavy numpy dependency
+    mean = sum(amounts) / n
+    variance = sum((x - mean) ** 2 for x in amounts) / n
+    std = math.sqrt(variance) if variance > 0 else 1
+
+    sorted_amounts = sorted(amounts)
+    def get_percentile(data, p):
+        idx = (len(data) - 1) * p
+        lower = math.floor(idx)
+        upper = math.ceil(idx)
+        weight = idx - lower
+        return data[lower] * (1 - weight) + data[upper] * weight
+
+    q1 = get_percentile(sorted_amounts, 0.25)
+    q3 = get_percentile(sorted_amounts, 0.75)
     iqr = q3 - q1
     iqr_threshold_high = q3 + 2.5 * iqr
+
     iqr_threshold_low = q1 - 2.5 * iqr
 
     SUSPICIOUS_MERCHANTS = [
