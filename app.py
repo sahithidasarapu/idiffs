@@ -2,8 +2,16 @@
 import eventlet
 eventlet.monkey_patch()
 
+import os
+# Ensure essential directories exist before any other imports or logging
+os.makedirs('logs', exist_ok=True)
+os.makedirs('data', exist_ok=True)
+os.makedirs('uploads', exist_ok=True)
+os.makedirs('models', exist_ok=True)
+
 """
 IDIFFS — Integrated Digital Intelligence & Forensic Security System
+
 
 Professional Cyber Crime Intelligence Platform
 Government-grade application for cyber forensics and crime detection
