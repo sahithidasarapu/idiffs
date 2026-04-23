@@ -201,13 +201,23 @@ def get_session_id():
     return session['sid']
 
 def get_geo_info(ip):
-    """Retrieve geolocation data using IPStack."""
+    """Retrieve geolocation data using IPStack, handling cloud proxies."""
     key = os.environ.get('IPSTACK_KEY')
-    if not key or not ip or ip in ['127.0.0.1', 'localhost']:
+    
+    # If no IP provided, try to get it from request headers (Railway/Cloudflare)
+    if not ip and request:
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+        
+    if not key or not ip or ip in ['127.0.0.1', 'localhost', '::1']:
+        logger.warning(f"Geo lookup skipped: Invalid IP or Missing Key (IP: {ip})")
         return None
     try:
         r = requests.get(f"http://api.ipstack.com/{ip}?access_key={key}", timeout=5)
-        return r.json()
+        data = r.json()
+        if 'latitude' not in data:
+            logger.error(f"Ipstack Error: {data.get('error', {}).get('info', 'Unknown error')}")
+            return None
+        return data
     except Exception as e:
         logger.error(f"Geo lookup error: {e}")
         return None

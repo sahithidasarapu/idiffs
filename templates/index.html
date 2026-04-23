@@ -2345,13 +2345,24 @@
     });
 
     socket.on('new_threat_map', (data) => {
-      if (!map) return;
+      console.log('--- MAP UPDATE RECEIVED ---', data);
+      if (!map) {
+        console.error('Map not initialized yet!');
+        return;
+      }
+      if (!data.lat || !data.lon) {
+        console.warn('Invalid coordinates received for map:', data);
+        return;
+      }
+      
       const marker = L.circleMarker([data.lat, data.lon], {
         color: 'red', fillColor: '#f03', fillOpacity: 0.5, radius: 10
       }).addTo(threatLayer);
       marker.bindPopup(`<b>${data.type}</b><br>${data.city}<br>${data.desc}`).openPopup();
-      // Keep view global but pan to the threat
+      
+      // Smoothly pan to the threat
       map.panTo([data.lat, data.lon]);
+      showToast('🌍 GEO-LOCATED', `Threat origin detected in ${data.city || 'Unknown Location'}`, 'info');
     });
 
     socket.on('ids_alert', (data) => {
