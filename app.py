@@ -258,11 +258,35 @@ def get_geo_info(ip_or_host):
         data2 = r2.json()
         if data2.get('status') == 'success':
             city = data2.get('city')
+            lat, lon = data2.get('lat'), data2.get('lon')
             isp = data2.get('isp', '').upper()
             
+            # --- FORENSIC NODE RESOLVER: City-Code Intelligence ---
+            # We perform a Reverse DNS lookup to find city codes in the hardware name
+            try:
+                import socket
+                hostname_node, _, _ = socket.gethostbyaddr(ip)
+                node_name = hostname_node.lower()
+                
+                # City Code Mapping (High-Precision nodes)
+                city_fixes = {
+                    'blr': ('Bengaluru', 12.9716, 77.5946),
+                    'bangalore': ('Bengaluru', 12.9716, 77.5946),
+                    'bom': ('Mumbai', 18.9220, 72.8347),
+                    'mumbai': ('Mumbai', 18.9220, 72.8347),
+                    'del': ('New Delhi', 28.6139, 77.2090),
+                    'delhi': ('New Delhi', 28.6139, 77.2090),
+                    'hyd': ('Hyderabad', 17.3850, 78.4867),
+                    'maa': ('Chennai', 13.0827, 80.2707),
+                    'chn': ('Chennai', 13.0827, 80.2707)
+                }
+                for code, (fixed_city, fixed_lat, fixed_lon) in city_fixes.items():
+                    if code in node_name:
+                        city, lat, lon = fixed_city, fixed_lat, fixed_lon
+                        break
+            except Exception: pass
+
             # SPECIAL FORENSIC LOGIC: Indian Govt Network (NIC) Accuracy Fix
-            # NIC servers often report the "Head Office" (Chennai/Delhi) instead of the local node.
-            # We check the 'AS' (Autonomous System) to refine the city.
             if "NATIONAL INFORMATICS CENTRE" in isp:
                 # If we detect NIC, we use a 3rd specialized provider for Govt Nodes
                 try:
@@ -273,8 +297,8 @@ def get_geo_info(ip_or_host):
                 except Exception: pass
 
             result = {
-                'latitude': data2.get('lat'),
-                'longitude': data2.get('lon'),
+                'latitude': lat,
+                'longitude': lon,
                 'city': city,
                 'country_name': data2.get('country'),
                 'region_name': data2.get('regionName'),
