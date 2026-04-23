@@ -1427,7 +1427,7 @@
       .topbar-status, .topbar-ver { display: none; }
     }
     
-    #threat-map { height: 450px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); background: #f0f4f9; }
+    #threat-map { height: 450px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); background: #0b0e14; }
     .war-room-chat { height: 350px; overflow-y: auto; background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--mono); font-size: 11px; }
     .chat-msg { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
     .chat-time { color: var(--accent); font-weight: bold; }
@@ -1530,7 +1530,7 @@
           </div>
           <span class="sh-badge">Live</span>
         </div>
-        <div class="stat-grid" style="display:grid !important; visibility:visible !important;">
+        <div class="stat-grid">
           <div class="stat-card">
             <div class="stat-label">Total Events</div>
             <div class="stat-value" id="stat-total">0</div>
@@ -2485,18 +2485,23 @@
 
       setTimeout(() => {
         try {
-            map = L.map('threat-map').setView([20, 0], 2); // Global World View
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '&copy; OpenStreetMap',
+            map = L.map('threat-map', {
+                center: [20, 0],
+                zoom: 2,
+                zoomControl: true,
+                attributionControl: true
+            });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+              attribution: '&copy; CartoDB',
               maxZoom: 18
             }).addTo(map);
             threatLayer = L.layerGroup().addTo(map);
             
-            // Force re-render after a short delay (Crucial for Safari/Mobile)
-            setTimeout(() => {
-                map.invalidateSize();
-                console.log("Map layout synchronized.");
-            }, 500);
+            // Critical fix for non-Chrome browsers
+            window.addEventListener('load', () => {
+                setTimeout(() => map.invalidateSize(), 1000);
+            });
+            setTimeout(() => map.invalidateSize(), 500);
         } catch (e) {
             console.error("Map Init Error:", e);
             // Retry once if it fails
