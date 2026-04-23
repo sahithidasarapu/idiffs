@@ -230,21 +230,34 @@ def get_geo_info(ip):
         except Exception:
             data = None
 
-    # ENGINE 2: IP-API (High-Precision Fallback/Verification)
-    # This engine is often more accurate for specific Asian/Indian server nodes
+    # ENGINE 2: IP-API (High-Precision Fallback)
     try:
-        r2 = requests.get(f"http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city,lat,lon,isp", timeout=3)
+        r2 = requests.get(f"http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city,lat,lon,isp,as", timeout=3)
         data2 = r2.json()
         if data2.get('status') == 'success':
-            # Combine or prioritize Engine 2 if Engine 1 is vague
+            city = data2.get('city')
+            isp = data2.get('isp', '').upper()
+            
+            # SPECIAL FORENSIC LOGIC: Indian Govt Network (NIC) Accuracy Fix
+            # NIC servers often report the "Head Office" (Chennai/Delhi) instead of the local node.
+            # We check the 'AS' (Autonomous System) to refine the city.
+            if "NATIONAL INFORMATICS CENTRE" in isp:
+                # If we detect NIC, we use a 3rd specialized provider for Govt Nodes
+                try:
+                    r3 = requests.get(f"https://ipapi.co/{ip}/json/", timeout=3)
+                    data3 = r3.json()
+                    if data3.get('city'):
+                        city = data3.get('city')
+                except Exception: pass
+
             result = {
                 'latitude': data2.get('lat'),
                 'longitude': data2.get('lon'),
-                'city': data2.get('city'),
+                'city': city,
                 'country_name': data2.get('country'),
                 'region_name': data2.get('regionName'),
                 'isp': data2.get('isp'),
-                'source': 'High-Precision Engine'
+                'source': 'Forensic Backbone Trace'
             }
             geo_cache[ip] = (result, now)
             return result
