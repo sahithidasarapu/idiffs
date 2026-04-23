@@ -1574,6 +1574,10 @@
           <div class="card">
             <div class="card-title">🌐 Live Threat Intelligence Map</div>
             <div id="threat-map" style="height: 450px; background: #0b0e14; border-radius: 8px;"></div>
+            <div id="map-controls" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+              <button class="btn btn-outline btn-sm" onclick="forceInitMap()">🛠️ Tap to Force-Start Map</button>
+              <span id="map-status" style="font-size:11px; font-family:var(--mono); color:var(--text2)">Status: Initializing...</span>
+            </div>
           </div>
           <div class="card">
             <div class="card-title">💬 Forensic War Room (Multi-User)</div>
@@ -2482,39 +2486,54 @@
       }
     }
 
+    function setMapStatus(msg, isError=false) {
+      const el = document.getElementById('map-status');
+      if (el) {
+        el.textContent = 'Status: ' + msg;
+        el.style.color = isError ? 'var(--danger)' : 'var(--success)';
+      }
+    }
+
+    function forceInitMap() {
+      if (map) {
+          map.remove();
+          map = null;
+      }
+      initThreatMap();
+    }
+
     function initThreatMap() {
       const container = document.getElementById('threat-map');
       if (!container) return;
 
       if (map) {
           map.invalidateSize();
+          setMapStatus('Active (Global)');
           return;
       }
       
-      // Multi-Stage Init for Mobile Stability
-      const runInit = () => {
-        try {
-            if (map) return;
-            map = L.map('threat-map', { fadeAnimation: false }).setView([20, 0], 2);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-              attribution: '&copy; CartoDB',
-              maxZoom: 18
-            }).addTo(map);
-            threatLayer = L.layerGroup().addTo(map);
-            
-            setInterval(() => { if(map) map.invalidateSize(); }, 3000); // Pulse check
-            console.log("Mobile Map Engine Activated.");
-        } catch (e) {
-            console.warn("Map retry...");
-        }
-      };
-
-      if (document.readyState === 'complete') {
-          setTimeout(runInit, 500);
-      } else {
-          window.addEventListener('load', runInit);
+      try {
+          setMapStatus('Starting Engine...');
+          map = L.map('threat-map', { fadeAnimation: false }).setView([20, 0], 2);
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; CartoDB',
+            maxZoom: 18
+          }).addTo(map);
+          threatLayer = L.layerGroup().addTo(map);
+          
+          setInterval(() => { if(map) map.invalidateSize(); }, 3000);
+          setMapStatus('Active (Secure)');
+          console.log("Mobile Map Engine Activated.");
+      } catch (e) {
+          console.error("Map Error:", e);
+          setMapStatus('Engine Error: ' + e.message, true);
       }
     }
+
+    // Auto-init on load
+    window.addEventListener('load', () => {
+      setTimeout(initThreatMap, 1500);
+    });
 
     function sendWarRoomChat() {
       const input = document.getElementById('war-room-input');
