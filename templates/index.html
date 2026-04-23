@@ -1427,7 +1427,7 @@
       .topbar-status, .topbar-ver { display: none; }
     }
     
-    #threat-map { height: 400px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); }
+    #threat-map { height: 450px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); background: #0b0e14; }
     .war-room-chat { height: 350px; overflow-y: auto; background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--mono); font-size: 11px; }
     .chat-msg { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
     .chat-time { color: var(--accent); font-weight: bold; }
@@ -2350,7 +2350,8 @@
         color: 'red', fillColor: '#f03', fillOpacity: 0.5, radius: 10
       }).addTo(threatLayer);
       marker.bindPopup(`<b>${data.type}</b><br>${data.city}<br>${data.desc}`).openPopup();
-      map.setView([data.lat, data.lon], 4);
+      // Keep view global but pan to the threat
+      map.panTo([data.lat, data.lon]);
     });
 
     socket.on('ids_alert', (data) => {
@@ -2466,9 +2467,9 @@
     function initThreatMap() {
       if (map) return;
       setTimeout(() => {
-        map = L.map('threat-map').setView([20.5937, 78.9629], 4); // Center on India
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap'
+        map = L.map('threat-map').setView([20, 0], 2); // Global World View
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; CartoDB'
         }).addTo(map);
         threatLayer = L.layerGroup().addTo(map);
       }, 500);
