@@ -11,8 +11,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
   <style>
     :root {
       --bg: #f0f4f9;
@@ -1427,7 +1427,7 @@
       .topbar-status, .topbar-ver { display: none; }
     }
     
-    #threat-map { height: 450px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); background: #0b0e14; }
+    #threat-map { height: 450px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); background: #0b0e14; filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%); }
     .war-room-chat { height: 350px; overflow-y: auto; background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--mono); font-size: 11px; }
     .chat-msg { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
     .chat-time { color: var(--accent); font-weight: bold; }
@@ -2486,8 +2486,8 @@
       setTimeout(() => {
         try {
             map = L.map('threat-map').setView([20, 0], 2); // Global World View
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-              attribution: '&copy; CartoDB',
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap',
               maxZoom: 18
             }).addTo(map);
             threatLayer = L.layerGroup().addTo(map);
