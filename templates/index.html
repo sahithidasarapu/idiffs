@@ -2476,13 +2476,32 @@
     }
 
     function initThreatMap() {
-      if (map) return;
+      if (map) {
+          setTimeout(() => map.invalidateSize(), 200);
+          return;
+      }
+      const container = document.getElementById('threat-map');
+      if (!container) return;
+
       setTimeout(() => {
-        map = L.map('threat-map').setView([20, 0], 2); // Global World View
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; CartoDB'
-        }).addTo(map);
-        threatLayer = L.layerGroup().addTo(map);
+        try {
+            map = L.map('threat-map').setView([20, 0], 2); // Global World View
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+              attribution: '&copy; CartoDB',
+              maxZoom: 18
+            }).addTo(map);
+            threatLayer = L.layerGroup().addTo(map);
+            
+            // Force re-render after a short delay (Crucial for Safari/Mobile)
+            setTimeout(() => {
+                map.invalidateSize();
+                console.log("Map layout synchronized.");
+            }, 500);
+        } catch (e) {
+            console.error("Map Init Error:", e);
+            // Retry once if it fails
+            setTimeout(initThreatMap, 1000);
+        }
       }, 500);
     }
 
