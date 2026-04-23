@@ -205,33 +205,66 @@ def get_session_id():
     return session['sid']
 
 def get_geo_info(ip):
-    """Retrieve geolocation data with high-speed caching."""
+    """Retrieve geolocation data with high-precision dual-engine lookup."""
     key = os.environ.get('IPSTACK_KEY')
-    
-    # Check if we already have this in our fast cache
     now = time_module.time()
+    
+    # Cache Check
     if ip in geo_cache:
         cached_data, timestamp = geo_cache[ip]
         if now - timestamp < CACHE_EXPIRY:
             return cached_data
 
-    # If no IP provided, try to get it from request headers
     if not ip and request:
         ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
         
-    if not key or not ip or ip in ['127.0.0.1', 'localhost', '::1']:
+    if not ip or ip in ['127.0.0.1', 'localhost', '::1']:
         return None
 
+    # ENGINE 1: Ipstack (Global Standard)
+    data = None
+    if key:
+        try:
+            r = requests.get(f"http://api.ipstack.com/{ip}?access_key={key}", timeout=3)
+            data = r.json()
+        except Exception:
+            data = None
+
+    # ENGINE 2: IP-API (High-Precision Fallback/Verification)
+    # This engine is often more accurate for specific Asian/Indian server nodes
     try:
-        r = requests.get(f"http://api.ipstack.com/{ip}?access_key={key}", timeout=3)
-        data = r.json()
-        if 'latitude' in data:
-            # Store in speed cache
-            geo_cache[ip] = (data, now)
-            return data
-        return None
+        r2 = requests.get(f"http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city,lat,lon,isp", timeout=3)
+        data2 = r2.json()
+        if data2.get('status') == 'success':
+            # Combine or prioritize Engine 2 if Engine 1 is vague
+            result = {
+                'latitude': data2.get('lat'),
+                'longitude': data2.get('lon'),
+                'city': data2.get('city'),
+                'country_name': data2.get('country'),
+                'region_name': data2.get('regionName'),
+                'isp': data2.get('isp'),
+                'source': 'High-Precision Engine'
+            }
+            geo_cache[ip] = (result, now)
+            return result
     except Exception:
-        return None
+        pass
+
+    # Fallback to Engine 1 if Engine 2 failed
+    if data and 'latitude' in data:
+        result = {
+            'latitude': data['latitude'],
+            'longitude': data['longitude'],
+            'city': data.get('city'),
+            'country_name': data.get('country_name'),
+            'region_name': data.get('region_name'),
+            'source': 'Global Engine'
+        }
+        geo_cache[ip] = (result, now)
+        return result
+
+    return None
 
 def block_malicious_domain(domain):
     """Add a Windows Firewall rule to block a suspicious domain."""
@@ -437,7 +470,8 @@ def api_url_analyze():
             'lon': geo['longitude'],
             'city': geo.get('city', 'Unknown'),
             'type': 'URL_MANUAL_SCAN',
-            'desc': f"Manual Scan: {hostname} ({level})"
+            'desc': f"Manual Scan: {hostname} ({level})",
+            'source': geo.get('source', 'Standard')
         })
 
     return jsonify({
@@ -493,7 +527,8 @@ def api_scam_analyze():
             'lon': geo['longitude'],
             'city': geo.get('city', 'Unknown'),
             'type': 'SCAM_MANUAL_SCAN',
-            'desc': f"Manual Scam Scan from {geo.get('city')}: {result['verdict']}"
+            'desc': f"Manual Scam Scan from {geo.get('city')}: {result['verdict']}",
+            'source': geo.get('source', 'Standard')
         })
 
     return jsonify(result)
@@ -572,7 +607,8 @@ def api_sms_webhook():
                 'lon': geo['longitude'],
                 'city': geo.get('city', 'Unknown'),
                 'type': 'URL_PHISH',
-                'desc': f"Phishing URL hosted in {geo.get('country_name')}"
+                'desc': f"Phishing URL hosted in {geo.get('country_name')}",
+                'source': geo.get('source', 'Standard')
             })
 
         # Auto-Block if HIGH_RISK

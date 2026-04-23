@@ -2369,7 +2369,7 @@
       const marker = L.circleMarker([data.lat, data.lon], {
         color: 'red', fillColor: '#f03', fillOpacity: 0.5, radius: 10
       }).addTo(threatLayer);
-      marker.bindPopup(`<b>${data.type}</b><br>${data.city}<br>${data.desc}`).openPopup();
+      marker.bindPopup(`<b>${data.type}</b><br>${data.city}<br>${data.desc}<br><small style="color:var(--accent)">Engine: ${data.source || 'Standard'}</small>`).openPopup();
       
       // Smoothly pan to the threat
       map.panTo([data.lat, data.lon]);
