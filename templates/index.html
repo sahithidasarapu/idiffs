@@ -1530,28 +1530,33 @@
           </div>
           <span class="sh-badge">Live</span>
         </div>
-        <div class="stat-grid">
-          <div class="stat-card">
-            <div class="stat-label">Total Events</div>
-            <div class="stat-value" id="stat-total">0</div>
-            <div class="stat-change">Since session start</div>
-          </div>
-          <div class="stat-card danger">
-            <div class="stat-label">High Severity</div>
-            <div class="stat-value" id="stat-high">0</div>
-            <div class="stat-change">Threats detected</div>
-          </div>
-          <div class="stat-card warn">
-            <div class="stat-label">URLs Scanned</div>
-            <div class="stat-value" id="stat-urls">0</div>
-            <div class="stat-change">Deep learning analysis</div>
-          </div>
-          <div class="stat-card success">
-            <div class="stat-label">Vault Items</div>
-            <div class="stat-value" id="stat-vault">0</div>
-            <div class="stat-change">AES-256 encrypted</div>
+        
+        <!-- Stats are now wrapped in a dedicated container for layout stability -->
+        <div id="dash-stats-container">
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Events</div>
+              <div class="stat-value" id="stat-total">0</div>
+              <div class="stat-change">Since session start</div>
+            </div>
+            <div class="stat-card danger">
+              <div class="stat-label">High Severity</div>
+              <div class="stat-value" id="stat-high">0</div>
+              <div class="stat-change">Threats detected</div>
+            </div>
+            <div class="stat-card warn">
+              <div class="stat-label">URLs Scanned</div>
+              <div class="stat-value" id="stat-urls">0</div>
+              <div class="stat-change">Deep learning analysis</div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-label">Vault Items</div>
+              <div class="stat-value" id="stat-vault">0</div>
+              <div class="stat-change">AES-256 encrypted</div>
+            </div>
           </div>
         </div>
+
         <div class="card">
           <div class="card-title">Live Forensic Event Feed</div>
           <div class="flex-row" style="margin-bottom:14px">
@@ -1560,13 +1565,13 @@
             <button class="btn btn-primary btn-sm" style="background:var(--accent)" onclick="generateReport()">📄 Generate Forensic Report</button>
           </div>
           <div id="event-log" style="max-height:380px;overflow-y:auto;"></div>
-          <div id="no-events" class="text-center text-muted" style="padding:40px">No forensic events yet. Use the
-            detection modules to start analysis.</div>
+          <div id="no-events" class="text-center text-muted" style="padding:40px">No forensic events yet. Use the detection modules to start analysis.</div>
         </div>
+
         <div class="two-col" style="margin-top:20px">
           <div class="card">
             <div class="card-title">🌐 Live Threat Intelligence Map</div>
-            <div id="threat-map"></div>
+            <div id="threat-map" style="height: 450px; background: #0b0e14; border-radius: 8px;"></div>
           </div>
           <div class="card">
             <div class="card-title">💬 Forensic War Room (Multi-User)</div>
@@ -2477,37 +2482,35 @@
 
     function initThreatMap() {
       if (map) {
-          setTimeout(() => map.invalidateSize(), 200);
+          setTimeout(() => map.invalidateSize(), 500);
           return;
       }
+      
       const container = document.getElementById('threat-map');
       if (!container) return;
 
+      // Lazy-Init to wait for browser layout stability
       setTimeout(() => {
         try {
-            map = L.map('threat-map', {
-                center: [20, 0],
-                zoom: 2,
-                zoomControl: true,
-                attributionControl: true
-            });
+            if (map) return;
+            map = L.map('threat-map').setView([20, 0], 2);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
               attribution: '&copy; CartoDB',
               maxZoom: 18
             }).addTo(map);
             threatLayer = L.layerGroup().addTo(map);
             
-            // Critical fix for non-Chrome browsers
-            window.addEventListener('load', () => {
-                setTimeout(() => map.invalidateSize(), 1000);
-            });
-            setTimeout(() => map.invalidateSize(), 500);
+            // Universal sync for mobile/tablets/desktops
+            const syncMap = () => { if(map) map.invalidateSize(); };
+            window.addEventListener('resize', syncMap);
+            setTimeout(syncMap, 500);
+            setTimeout(syncMap, 2000);
+            console.log("Universal Map Engine Started.");
         } catch (e) {
-            console.error("Map Init Error:", e);
-            // Retry once if it fails
-            setTimeout(initThreatMap, 1000);
+            console.error("Map Engine Fail:", e);
+            setTimeout(initThreatMap, 2000); // Auto-retry
         }
-      }, 500);
+      }, 800);
     }
 
     function sendWarRoomChat() {
