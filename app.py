@@ -332,6 +332,20 @@ def require_api_key(f):
         return f(*args, **kwargs)
     return decorated
 
+@app.route('/api/debug/geo/<target>')
+def api_debug_geo(target):
+    """Debug route to test Ipstack connectivity and response."""
+    key = os.environ.get('IPSTACK_KEY')
+    try:
+        r = requests.get(f"http://api.ipstack.com/{target}?access_key={key}", timeout=5)
+        return jsonify({
+            'status_code': r.status_code,
+            'response': r.json(),
+            'key_used': f"{key[:4]}...{key[-4:]}" if key else "None"
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
 # ─── ROUTES: MAIN ────────────────────────────────────────────────────────────
 
 @app.route('/')
