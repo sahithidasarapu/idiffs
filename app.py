@@ -169,6 +169,10 @@ init_db()
 # ─── BLOCKCHAIN LEDGER (Persistent) ──────────────────────────────────────────
 ledger_lock = threading.Lock()
 
+# Forensic Speed Cache
+geo_cache = {}
+CACHE_EXPIRY = 3600 * 24 # 24 Hours
+
 def seal_on_blockchain(data_dict):
     """Cryptographically seal an event or document on a persistent blockchain ledger."""
     with ledger_lock:
@@ -201,25 +205,32 @@ def get_session_id():
     return session['sid']
 
 def get_geo_info(ip):
-    """Retrieve geolocation data using IPStack, handling cloud proxies."""
+    """Retrieve geolocation data with high-speed caching."""
     key = os.environ.get('IPSTACK_KEY')
     
-    # If no IP provided, try to get it from request headers (Railway/Cloudflare)
+    # Check if we already have this in our fast cache
+    now = time_module.time()
+    if ip in geo_cache:
+        cached_data, timestamp = geo_cache[ip]
+        if now - timestamp < CACHE_EXPIRY:
+            return cached_data
+
+    # If no IP provided, try to get it from request headers
     if not ip and request:
         ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
         
     if not key or not ip or ip in ['127.0.0.1', 'localhost', '::1']:
-        logger.warning(f"Geo lookup skipped: Invalid IP or Missing Key (IP: {ip})")
         return None
+
     try:
-        r = requests.get(f"http://api.ipstack.com/{ip}?access_key={key}", timeout=5)
+        r = requests.get(f"http://api.ipstack.com/{ip}?access_key={key}", timeout=3)
         data = r.json()
-        if 'latitude' not in data:
-            logger.error(f"Ipstack Error: {data.get('error', {}).get('info', 'Unknown error')}")
-            return None
-        return data
-    except Exception as e:
-        logger.error(f"Geo lookup error: {e}")
+        if 'latitude' in data:
+            # Store in speed cache
+            geo_cache[ip] = (data, now)
+            return data
+        return None
+    except Exception:
         return None
 
 def block_malicious_domain(domain):

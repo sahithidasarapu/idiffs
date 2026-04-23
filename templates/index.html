@@ -1389,7 +1389,6 @@
       user-select: none;
       padding-right: 10px;
     }
-    
     #sidebar-overlay {
       display: none;
       position: fixed;
@@ -1425,6 +1424,9 @@
       #content { padding: 16px; }
       
       .topbar-status, .topbar-ver { display: none; }
+      
+      /* Optimized Map for Mobile */
+      #threat-map { height: 300px; }
     }
     
     #threat-map { height: 450px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); background: #0b0e14; }
@@ -2481,36 +2483,37 @@
     }
 
     function initThreatMap() {
-      if (map) {
-          setTimeout(() => map.invalidateSize(), 500);
-          return;
-      }
-      
       const container = document.getElementById('threat-map');
       if (!container) return;
 
-      // Lazy-Init to wait for browser layout stability
-      setTimeout(() => {
+      if (map) {
+          map.invalidateSize();
+          return;
+      }
+      
+      // Multi-Stage Init for Mobile Stability
+      const runInit = () => {
         try {
             if (map) return;
-            map = L.map('threat-map').setView([20, 0], 2);
+            map = L.map('threat-map', { fadeAnimation: false }).setView([20, 0], 2);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
               attribution: '&copy; CartoDB',
               maxZoom: 18
             }).addTo(map);
             threatLayer = L.layerGroup().addTo(map);
             
-            // Universal sync for mobile/tablets/desktops
-            const syncMap = () => { if(map) map.invalidateSize(); };
-            window.addEventListener('resize', syncMap);
-            setTimeout(syncMap, 500);
-            setTimeout(syncMap, 2000);
-            console.log("Universal Map Engine Started.");
+            setInterval(() => { if(map) map.invalidateSize(); }, 3000); // Pulse check
+            console.log("Mobile Map Engine Activated.");
         } catch (e) {
-            console.error("Map Engine Fail:", e);
-            setTimeout(initThreatMap, 2000); // Auto-retry
+            console.warn("Map retry...");
         }
-      }, 800);
+      };
+
+      if (document.readyState === 'complete') {
+          setTimeout(runInit, 500);
+      } else {
+          window.addEventListener('load', runInit);
+      }
     }
 
     function sendWarRoomChat() {
