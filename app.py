@@ -418,6 +418,17 @@ def api_url_analyze():
     conn.commit()
     conn.close()
 
+    # Geo lookup for the map
+    geo = get_geo_info(hostname)
+    if geo and geo.get('latitude'):
+        socketio.emit('new_threat_map', {
+            'lat': geo['latitude'],
+            'lon': geo['longitude'],
+            'city': geo.get('city', 'Unknown'),
+            'type': 'URL_MANUAL_SCAN',
+            'desc': f"Manual Scan: {hostname} ({level})"
+        })
+
     return jsonify({
         'url': raw_url,
         'hostname': hostname,
@@ -463,10 +474,17 @@ def api_scam_analyze():
     log_forensic_event('SCAM_DETECTOR', 'SCAN_COMPLETE', 2 if result['score'] > 50 else 1, 
                         f"Scam analysis for {sender}: {result['verdict']} ({result['score']}%)")
     
-    result['timestamp'] = ts()
-    result['msg_type'] = msg_type
-    result['sender'] = sender
-    result['text_preview'] = text[:80] + '...' if len(text) > 80 else text
+    # Geo lookup for the map
+    geo = get_geo_info(None) # None will force it to check the requester's IP
+    if geo and geo.get('latitude'):
+        socketio.emit('new_threat_map', {
+            'lat': geo['latitude'],
+            'lon': geo['longitude'],
+            'city': geo.get('city', 'Unknown'),
+            'type': 'SCAM_MANUAL_SCAN',
+            'desc': f"Manual Scam Scan from {geo.get('city')}: {result['verdict']}"
+        })
+
     return jsonify(result)
 
 # ─── ROUTES: SMS COMPANION ───────────────────────────────────────────────────
