@@ -2395,7 +2395,8 @@
         div.className = 'event-row';
         div.style.padding = '8px 0';
         div.style.borderBottom = '1px solid var(--border)';
-        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${payload.desc}</b>`;
+        // Structure: [TIME] HOSTNAME — LEVEL
+        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${payload.desc.split('Scanned: ')[1] || payload.desc}</b>`;
         feed.prepend(div);
         loadUrlHistory();
       }
@@ -2406,7 +2407,8 @@
         div.className = 'event-row';
         div.style.padding = '8px 0';
         div.style.borderBottom = '1px solid var(--border)';
-        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${payload.desc}</b>`;
+        // Structure: [TIME] SENDER: VERDICT
+        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${payload.desc.split('for ')[1] || payload.desc}</b>`;
         feed.prepend(div);
         loadScamHistory();
       }
