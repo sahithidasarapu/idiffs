@@ -1349,7 +1349,7 @@ def _expert_system_response(msg, sid=None):
             import google.generativeai as genai
             genai.configure(api_key=api_key)
 
-            system_instruction = "You are a professional Cyber Forensic AI Assistant. Your goal is to help users understand and resolve cyber threats. You MUST follow this exact structure for every response: 1. ANALYSIS: Explain the problem/risk clearly in 1-2 sentences. 2. SOLUTION: Provide a brief, actionable step-by-step solution. 3. REDIRECTIONS: Include relevant [GOTO:module] or [CALL:1930] tags. Always output clean HTML (use <strong>, <ul>, <li>, <br>). DO NOT use Markdown asterisks (**). "
+            system_instruction = "You are a Cyber Forensic AI. Be EXTREMELY BRIEF. Structure: 1. ANALYSIS: 1 short sentence max. 2. SOLUTION: 2-3 very short bullet points max. 3. REDIRECTIONS: [GOTO:...] [CALL:1930]. Output clean HTML (<strong>, <ul>, <li>, <br>). No asterisks."
 
             # Build context-aware prompt with conversation memory
             context_lines = []
@@ -1421,38 +1421,31 @@ def _builtin_forensic_expert(msg):
     # Knowledge base: keyword -> (response HTML, goto_tags)
     knowledge = [
         (['phishing', 'fake website', 'fake site', 'fake link', 'spoof'],
-         '<strong>ANALYSIS:</strong> Phishing is a social engineering attack where criminals create fake websites or send deceptive messages to steal your passwords and financial data.<br><br>'
+         '<strong>ANALYSIS:</strong> Fake link designed to steal credentials.<br><br>'
          '<strong>SOLUTION:</strong><ul>'
-         '<li>Do not click the link. Instead, type the official website address directly into your browser.</li>'
-         '<li>Use our URL Threat Analyzer to scan the link for malware or fraud patterns.</li>'
-         '<li>If you have already entered details, change your passwords immediately and inform your bank.</li></ul>',
+         '<li>Do not click. Scan with URL Analyzer.</li>'
+         '<li>Change passwords if already clicked.</li></ul>',
          '[GOTO:url_analyzer] [CALL:1930]'),
 
         (['otp', 'one time password', 'verification code'],
-         '<strong>ANALYSIS:</strong> An OTP (One Time Password) is a secure code used to authorize transactions. Scammers ask for this to gain control of your bank accounts or social media.<br><br>'
+         '<strong>ANALYSIS:</strong> OTP theft allows scammers to drain bank accounts.<br><br>'
          '<strong>SOLUTION:</strong><ul>'
-         '<li>Never share your OTP with anyone, even if they claim to be from a bank or government agency.</li>'
-         '<li>If you receive an unsolicited OTP, your credentials may already be compromised; change your password immediately.</li>'
-         '<li>Immediately report any unauthorized OTP requests to the 1930 helpline.</li></ul>',
+         '<li>Never share OTP with anyone.</li>'
+         '<li>Block accounts if shared.</li></ul>',
          '[GOTO:scam_detector] [CALL:1930]'),
 
         (['upi', 'google pay', 'phonepe', 'paytm', 'bhim', 'gpay'],
-         '<strong>Analysis:</strong> UPI fraud is one of the most common cyber crimes in India. Scammers trick victims into approving collect requests or sharing UPI PINs.<br><br>'
-         '<strong>Action Plan:</strong><ul>'
-         '<li>You only need to enter UPI PIN to SEND money — never to receive it</li>'
-         '<li>Reject unknown collect/payment requests immediately</li>'
-         '<li>Never scan QR codes sent by strangers claiming to "send" you money</li>'
-         '<li>Verify the merchant name before completing any payment</li>'
-         '<li>Report unauthorized UPI transactions within 24 hours to your bank</li>'
-         '<li>Use our Transaction Anomaly Engine to detect suspicious patterns</li></ul>',
+         '<strong>ANALYSIS:</strong> Fraudulent collect requests or PIN theft.<br><br>'
+         '<strong>SOLUTION:</strong><ul>'
+         '<li>PIN only needed to SEND money, never to RECEIVE.</li>'
+         '<li>Reject unknown requests.</li></ul>',
          '[GOTO:transaction_analyzer] [CALL:1930]'),
 
         (['scam', 'fraud', 'suspicious message', 'spam', 'fake sms', 'fake call'],
-         '<strong>ANALYSIS:</strong> Scam messages use urgency and fear (e.g., "account blocked") to trick you into clicking dangerous links or sharing data.<br><br>'
+         '<strong>ANALYSIS:</strong> Deceptive text used to steal data or money.<br><br>'
          '<strong>SOLUTION:</strong><ul>'
-         '<li>Use the Scam Detector below to analyze the message content for fraud signals.</li>'
-         '<li>Block the sender and delete the message immediately. Do not call any numbers provided in the text.</li>'
-         '<li>If money was lost, call 1930 within the "Golden Hour" for better recovery chances.</li></ul>',
+         '<li>Paste in Scam Detector for analysis.</li>'
+         '<li>Block sender and report to 1930.</li></ul>',
          '[GOTO:scam_detector] [CALL:1930]'),
 
         (['ransomware', 'malware', 'virus', 'hack', 'hacked', 'encrypt'],
