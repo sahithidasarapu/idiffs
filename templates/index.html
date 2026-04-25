@@ -2692,6 +2692,16 @@
       <td>${h.level === 'SAFE' ? '✅ Allowed' : '🚫 Blocked'}</td>
     </tr>`
       ).join('');
+
+      // Update Live Intercept Box with last 5 items
+      const liveFeed = document.getElementById('live-url-feed');
+      if (liveFeed) {
+        liveFeed.innerHTML = state.urlHistory.slice(0, 5).map(h =>
+          `<div class="event-row" style="padding:8px 0; border-bottom:1px solid var(--border)">
+            <span style="color:var(--accent)">[${h.time}]</span> <b>${h.hostname}</b> — <span class="badge ${clsMap[h.level] || 'badge-neutral'}" style="font-size:9px">${h.level}</span>
+          </div>`
+        ).join('') || '<div class="text-center text-muted" style="padding:40px">Waiting for live data from companion app...</div>';
+      }
     }
 
     // ═══════════════════════════════ SCAM DETECTOR ═══════════════════════════════
@@ -2754,6 +2764,16 @@
       <td><span class="badge ${clsM[h.verdict] || 'badge-neutral'}">${h.verdict.replace('_', ' ')}</span></td>
     </tr>`
       ).join('');
+
+      // Update Live Intercept Box with last 5 items
+      const liveFeed = document.getElementById('live-scam-feed');
+      if (liveFeed) {
+        liveFeed.innerHTML = state.scamHistory.slice(0, 5).map(h =>
+          `<div class="event-row" style="padding:8px 0; border-bottom:1px solid var(--border)">
+            <span style="color:var(--accent)">[${h.time}]</span> <b>${h.sender}</b>: <span class="badge ${clsM[h.verdict] || 'badge-neutral'}" style="font-size:9px">${h.verdict.replace('_', ' ')}</span>
+          </div>`
+        ).join('') || '<div class="text-center text-muted" style="padding:60px">Awaiting live SMS data...</div>';
+      }
     }
 
     // ═══════════════════════════════ TRANSACTION ENGINE ══════════════════════════
@@ -3855,6 +3875,8 @@ Reference: cybercrime.gov.in | Helpline: 1930`;
         scanTimer = 0;
         updateSystemMonitor();
       }
+      if (id === 'url') loadUrlHistory();
+      if (id === 'scam') loadScamHistory();
     };
 
     // ═══════════════════════════════ INIT ════════════════════════════════════════
@@ -3863,6 +3885,8 @@ Reference: cybercrime.gov.in | Helpline: 1930`;
       renderPortals();
       initVoice();
       loadEvents();
+      loadUrlHistory();
+      loadScamHistory();
       checkDigiLockerStatus();
     });
   </script>
