@@ -631,11 +631,17 @@ def api_sms_webhook():
                           f"AI Triage: {ai_result.get('threat_level')} (conf:{ai_result.get('confidence')}%) | Tactics: {tactics}")
 
     # ----- LIVE URL EXTRACTION AND ANALYSIS -----
-    # Extract URLs from the SMS message
-    urls = re.findall(r'(https?://[^\s]+)', message)
+    # Improved regex to find URLs with or without protocol, stripping trailing punctuation
+    url_pattern = r'(?:https?://|www\.)[^\s]+'
+    raw_urls = re.findall(url_pattern, message)
+    
+    # Clean URLs (remove trailing dots, commas, etc.)
+    urls = [u.rstrip('.,!?;:') for u in raw_urls]
+    
+    # Secondary check for plain domains like "google.com" if no protocol/www found
     if not urls:
-        # fallback for URLs without http/https
-        urls = re.findall(r'\b(www\.[^\s]+)\b', message)
+        domain_pattern = r'\b[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?\b'
+        urls = re.findall(domain_pattern, message)
         
     for raw_url in urls:
         url = raw_url if raw_url.startswith('http') else 'https://' + raw_url
