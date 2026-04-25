@@ -2396,7 +2396,8 @@
         div.style.padding = '8px 0';
         div.style.borderBottom = '1px solid var(--border)';
         // Structure: [TIME] HOSTNAME — LEVEL
-        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${payload.desc.split('Scanned: ')[1] || payload.desc}</b>`;
+        const cleanDesc = payload.desc.includes('Detected: ') ? payload.desc.split('Detected: ')[1] : (payload.desc.includes('Scanned: ') ? payload.desc.split('Scanned: ')[1] : payload.desc);
+        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${cleanDesc}</b>`;
         feed.prepend(div);
         loadUrlHistory();
       }
@@ -2408,7 +2409,8 @@
         div.style.padding = '8px 0';
         div.style.borderBottom = '1px solid var(--border)';
         // Structure: [TIME] SENDER: VERDICT
-        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${payload.desc.split('for ')[1] || payload.desc}</b>`;
+        const cleanDesc = payload.desc.includes('from ') ? payload.desc.split('from ')[1] : (payload.desc.includes('for ') ? payload.desc.split('for ')[1] : payload.desc);
+        div.innerHTML = `<span style="color:var(--accent)">[${payload.time}]</span> <b>${cleanDesc}</b>`;
         feed.prepend(div);
         loadScamHistory();
       }
