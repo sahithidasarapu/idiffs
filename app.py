@@ -1349,7 +1349,7 @@ def _expert_system_response(msg, sid=None):
             import google.generativeai as genai
             genai.configure(api_key=api_key)
 
-            system_instruction = "You are a context-aware forensic AI assistant with memory of the user's session. You remember previous questions and forensic scan results. Provide brief but comprehensive responses. Always output clean HTML (use <strong>, <ul>, <li>, <br>). DO NOT use Markdown asterisks (**). Include relevant redirection tags at the end (e.g., [GOTO:scam_detector] [GOTO:url_analyzer] [CALL:1930])."
+            system_instruction = "You are a professional Cyber Forensic AI Assistant. Your goal is to help users understand and resolve cyber threats. You MUST follow this exact structure for every response: 1. ANALYSIS: Explain the problem/risk clearly in 1-2 sentences. 2. SOLUTION: Provide a brief, actionable step-by-step solution. 3. REDIRECTIONS: Include relevant [GOTO:module] or [CALL:1930] tags. Always output clean HTML (use <strong>, <ul>, <li>, <br>). DO NOT use Markdown asterisks (**). "
 
             # Build context-aware prompt with conversation memory
             context_lines = []
@@ -1421,23 +1421,19 @@ def _builtin_forensic_expert(msg):
     # Knowledge base: keyword -> (response HTML, goto_tags)
     knowledge = [
         (['phishing', 'fake website', 'fake site', 'fake link', 'spoof'],
-         '<strong>Analysis:</strong> Phishing is a social engineering attack where criminals create fake websites or send deceptive messages to steal your personal information, passwords, and financial data.<br><br>'
-         '<strong>Action Plan:</strong><ul>'
-         '<li>Never click links from unknown SMS, email, or WhatsApp messages</li>'
-         '<li>Always check the URL carefully — look for misspellings (e.g., "onlinesb1.com" instead of "onlinesbi.sbi")</li>'
-         '<li>Use our URL Threat Analyzer to scan any suspicious link before visiting</li>'
-         '<li>Official bank sites always use HTTPS and have verified domains</li>'
-         '<li>If you entered credentials on a fake site, change your password immediately and call 1930</li></ul>',
+         '<strong>ANALYSIS:</strong> Phishing is a social engineering attack where criminals create fake websites or send deceptive messages to steal your passwords and financial data.<br><br>'
+         '<strong>SOLUTION:</strong><ul>'
+         '<li>Do not click the link. Instead, type the official website address directly into your browser.</li>'
+         '<li>Use our URL Threat Analyzer to scan the link for malware or fraud patterns.</li>'
+         '<li>If you have already entered details, change your passwords immediately and inform your bank.</li></ul>',
          '[GOTO:url_analyzer] [CALL:1930]'),
 
         (['otp', 'one time password', 'verification code'],
-         '<strong>Analysis:</strong> OTP (One Time Password) is your last line of defense in digital transactions. No legitimate bank, government agency, or company will ever ask you to share your OTP.<br><br>'
-         '<strong>Action Plan:</strong><ul>'
-         '<li>NEVER share your OTP with anyone — not even someone claiming to be from your bank</li>'
-         '<li>Banks will never call and ask for OTP to "verify" or "cancel" a transaction</li>'
-         '<li>If you accidentally shared your OTP, immediately block your card via your banking app</li>'
-         '<li>Report the incident to your bank and call the Cyber Crime Helpline 1930</li>'
-         '<li>Enable transaction alerts on your bank account for real-time monitoring</li></ul>',
+         '<strong>ANALYSIS:</strong> An OTP (One Time Password) is a secure code used to authorize transactions. Scammers ask for this to gain control of your bank accounts or social media.<br><br>'
+         '<strong>SOLUTION:</strong><ul>'
+         '<li>Never share your OTP with anyone, even if they claim to be from a bank or government agency.</li>'
+         '<li>If you receive an unsolicited OTP, your credentials may already be compromised; change your password immediately.</li>'
+         '<li>Immediately report any unauthorized OTP requests to the 1930 helpline.</li></ul>',
          '[GOTO:scam_detector] [CALL:1930]'),
 
         (['upi', 'google pay', 'phonepe', 'paytm', 'bhim', 'gpay'],
@@ -1452,14 +1448,12 @@ def _builtin_forensic_expert(msg):
          '[GOTO:transaction_analyzer] [CALL:1930]'),
 
         (['scam', 'fraud', 'suspicious message', 'spam', 'fake sms', 'fake call'],
-         '<strong>Analysis:</strong> Scam messages use urgency, fear, and impersonation to trick victims. Our NLP engine can detect these patterns automatically.<br><br>'
-         '<strong>Action Plan:</strong><ul>'
-         '<li>Paste the suspicious message in our Scam Detector for instant analysis</li>'
-         '<li>Look for red flags: urgency ("24 hours"), threats ("account blocked"), prize claims</li>'
-         '<li>Verify sender identity through official channels (visit bank branch or call official number)</li>'
-         '<li>Never call back numbers from suspicious messages</li>'
-         '<li>Block and report the sender</li></ul>',
-         '[GOTO:scam_detector]'),
+         '<strong>ANALYSIS:</strong> Scam messages use urgency and fear (e.g., "account blocked") to trick you into clicking dangerous links or sharing data.<br><br>'
+         '<strong>SOLUTION:</strong><ul>'
+         '<li>Use the Scam Detector below to analyze the message content for fraud signals.</li>'
+         '<li>Block the sender and delete the message immediately. Do not call any numbers provided in the text.</li>'
+         '<li>If money was lost, call 1930 within the "Golden Hour" for better recovery chances.</li></ul>',
+         '[GOTO:scam_detector] [CALL:1930]'),
 
         (['ransomware', 'malware', 'virus', 'hack', 'hacked', 'encrypt'],
          '<strong>Analysis:</strong> Ransomware encrypts your files and demands payment. Malware can steal data, monitor activity, or damage your system.<br><br>'
