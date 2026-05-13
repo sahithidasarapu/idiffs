@@ -2012,6 +2012,7 @@
             <div class="form-row" style="justify-content:center;gap:10px;margin-top:8px">
               <button class="btn btn-primary" onclick="toggleVoice()" id="voice-btn">🎙️ Start Listening</button>
               <button class="btn btn-outline" onclick="stopVoice()">⏹ Stop</button>
+              <button class="btn btn-danger" onclick="stopSpeaking()" id="stop-speaking-btn" style="display:none">🔇 Stop Reading</button>
               <button class="btn btn-outline" onclick="toggleContinuousMode()" id="continuous-btn" style="border-color:var(--accent);color:var(--accent)">🔄 Continuous Mode</button>
             </div>
           </div>
@@ -2025,10 +2026,11 @@
                 safety.
               </div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px">
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-outline btn-sm"
                 onclick="speakText('Hello! I am your cyber security voice assistant. How can I help you today?')">🔊
                 Test Voice</button>
+              <button class="btn btn-danger btn-sm" onclick="stopSpeaking()" id="stop-speaking-btn-2" style="display:none">🔇 Stop Reading Answer</button>
               <button class="btn btn-outline btn-sm" onclick="document.getElementById('voice-chat').innerHTML=''">🗑️
                 Clear</button>
             </div>
@@ -3207,21 +3209,17 @@
       const div = document.createElement('div');
       div.className = 'msg ' + role;
 
-      let cleanText = text;
-      let redirect = null;
-
-      // Parse redirection tags
-      if (text.includes('[GOTO:')) {
-        const match = text.match(/\[GOTO:(\w+)\]/);
-        if (match) {
-          redirect = match[1];
-          cleanText = text.replace(/\[GOTO:\w+\]/, '').trim();
-        }
-      }
-
       if (role === 'ai') {
-        div.innerHTML = '<div class="msg-label">🤖 IDIFFS AI Assistant</div>' + cleanText.replace(/\n/g, '<br>').replace(/\[CALL:(\d+)\]/g, '');
+        // Extract ALL GOTO and CALL tags before cleaning
+        const allGotos = [...text.matchAll(/\[GOTO:(\w+)\]/g)].map(m => m[1]);
+        const allCalls = [...text.matchAll(/\[CALL:(\d+)\]/g)].map(m => m[1]);
 
+        // Clean ALL tags from display text
+        let cleanText = text.replace(/\[GOTO:\w+\]/g, '').replace(/\[CALL:\d+\]/g, '').trim();
+
+        div.innerHTML = '<div class="msg-label">🤖 IDIFFS AI Assistant</div>' + cleanText.replace(/\n/g, '<br>');
+
+        // Build action buttons container
         const actions = document.createElement('div');
         actions.className = 'msg-actions';
         actions.style.marginTop = '15px';
@@ -3229,34 +3227,47 @@
         actions.style.flexDirection = 'column';
         actions.style.gap = '8px';
 
-        // Parse CALL tags
-        const callMatch = text.match(/\[CALL:(\d+)\]/);
-        if (callMatch) {
-          const num = callMatch[1];
+        // Create buttons for ALL CALL tags
+        const seenCalls = new Set();
+        allCalls.forEach(num => {
+          if (seenCalls.has(num)) return;
+          seenCalls.add(num);
           const btn = document.createElement('button');
           btn.className = 'btn btn-danger';
           btn.style.width = '100%';
-          btn.innerHTML = `📞 Call National Helpline ${num}`;
+          btn.innerHTML = `📞 Call National Cyber Helpline — ${num}`;
           btn.onclick = () => {
             window.location.href = `tel:${num}`;
             showToast('EMERGENCY', `Initiating call to ${num}...`, 'danger');
           };
           actions.appendChild(btn);
-        }
+        });
 
-        // Parse GOTO tags
-        if (redirect) {
+        // Create buttons for ALL GOTO tags (deduplicated)
+        const moduleLabels = {
+          url_analyzer: '🔗 URL Threat Analyzer',
+          scam_detector: '📨 Scam & Phishing Detector',
+          transaction_analyzer: '💳 Transaction Anomaly Engine',
+          system_monitor: '🖥️ System Monitor',
+          vault: '🔐 Identity Vault',
+          digilocker: '📁 DigiLocker Sync',
+          report: '🚨 Report Cyber Crime'
+        };
+        const seenGotos = new Set();
+        allGotos.forEach(target => {
+          if (seenGotos.has(target)) return;
+          seenGotos.add(target);
           const btn = document.createElement('button');
           btn.className = 'btn btn-primary';
           btn.style.width = '100%';
-          btn.innerHTML = `🛡️ Open ${redirect.toUpperCase()} Module`;
-          const target = redirect;
+          const label = moduleLabels[target] || `🛡️ ${target.toUpperCase()}`;
+          btn.innerHTML = `${label} →`;
           btn.onclick = () => {
-            showSection(target);
-            showToast('NAVIGATION', `Transitioning to ${target.toUpperCase()} for investigation.`, 'success');
+            showSection(target === 'url_analyzer' ? 'url' : target === 'scam_detector' ? 'scam' : target === 'transaction_analyzer' ? 'transactions' : target === 'system_monitor' ? 'monitor' : target);
+            showToast('NAVIGATION', `Opening ${label} for investigation.`, 'success');
           };
           actions.appendChild(btn);
-        }
+        });
 
         if (actions.children.length > 0) div.appendChild(actions);
       } else {
@@ -3449,18 +3460,40 @@
         // Strip HTML for speech (plain text)
         const stripped = cleanReply.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').trim();
 
+        // Module label mapping for prettier buttons
+        const moduleLabels = {
+          url_analyzer: '🔗 URL Threat Analyzer',
+          scam_detector: '📨 Scam & Phishing Detector',
+          transaction_analyzer: '💳 Transaction Anomaly Engine',
+          system_monitor: '🖥️ System Monitor',
+          vault: '🔐 Identity Vault',
+          digilocker: '📁 DigiLocker Sync',
+          report: '🚨 Report Cyber Crime'
+        };
+        const sectionMap = {
+          url_analyzer: 'url', scam_detector: 'scam',
+          transaction_analyzer: 'transactions', system_monitor: 'monitor'
+        };
+
         // Build display HTML
         let html = `<div class="msg-label">🔊 Voice Assistant</div>${cleanReply}`;
 
-        // Add action buttons
+        // Add action buttons for ALL CALL and ALL GOTO tags (deduplicated)
         const actions = [];
+        const seenCalls = new Set();
         allCalls.forEach(num => {
-          actions.push(`<button class="btn btn-danger btn-sm" style="margin-top:10px; width:100%" onclick="window.location.href='tel:${num}'">📞 Call Helpline ${num}</button>`);
+          if (seenCalls.has(num)) return;
+          seenCalls.add(num);
+          actions.push(`<button class="btn btn-danger btn-sm" style="margin-top:10px; width:100%" onclick="window.location.href='tel:${num}'">📞 Call National Cyber Helpline — ${num}</button>`);
         });
-        if (allGotos.length > 0) {
-          const target = allGotos[0];
-          actions.push(`<button class="btn btn-primary btn-sm" style="margin-top:10px; width:100%" onclick="showSection('${target}'); showToast('VOICE NAV', 'Moving to ${target.toUpperCase()}', 'success');">🛡️ Open ${target.toUpperCase()} Module</button>`);
-        }
+        const seenGotos = new Set();
+        allGotos.forEach(target => {
+          if (seenGotos.has(target)) return;
+          seenGotos.add(target);
+          const label = moduleLabels[target] || `🛡️ ${target.toUpperCase()}`;
+          const section = sectionMap[target] || target;
+          actions.push(`<button class="btn btn-primary btn-sm" style="margin-top:10px; width:100%" onclick="showSection('${section}'); showToast('VOICE NAV', 'Opening ${label}', 'success');">${label} →</button>`);
+        });
 
         if (actions.length > 0) html += `<br>${actions.join('')}`;
         
@@ -3581,11 +3614,23 @@
                         voices.find(v => v.lang.startsWith('en'));
       if (preferred) utt.voice = preferred;
 
+      // Show stop-speaking buttons
+      const stopBtn1 = document.getElementById('stop-speaking-btn');
+      const stopBtn2 = document.getElementById('stop-speaking-btn-2');
+      if (stopBtn1) stopBtn1.style.display = 'inline-flex';
+      if (stopBtn2) stopBtn2.style.display = 'inline-flex';
+
       utt.onend = () => {
         document.getElementById('voice-status').innerHTML = '✅ <span style="color:var(--success)">Response complete.</span> Click the microphone to ask another question.';
+        // Hide stop-speaking buttons
+        if (stopBtn1) stopBtn1.style.display = 'none';
+        if (stopBtn2) stopBtn2.style.display = 'none';
       };
       utt.onerror = (e) => {
         console.error('Speech synthesis error:', e);
+        // Hide stop-speaking buttons
+        if (stopBtn1) stopBtn1.style.display = 'none';
+        if (stopBtn2) stopBtn2.style.display = 'none';
         // Ignore "interrupted" errors which happen on cancel
         if (e.error !== 'interrupted') {
           document.getElementById('voice-status').innerHTML = '⚠️ <span style="color:var(--warn)">Voice playback failed. Response is shown in text above.</span>';
@@ -3599,6 +3644,19 @@
       setTimeout(() => {
         window.speechSynthesis.speak(utt);
       }, 150);
+    }
+
+    function stopSpeaking() {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      // Hide stop buttons
+      const stopBtn1 = document.getElementById('stop-speaking-btn');
+      const stopBtn2 = document.getElementById('stop-speaking-btn-2');
+      if (stopBtn1) stopBtn1.style.display = 'none';
+      if (stopBtn2) stopBtn2.style.display = 'none';
+      // Update status
+      document.getElementById('voice-status').innerHTML = '⏹ <span style="color:var(--text2)">Voice stopped.</span> Click the microphone to ask another question.';
     }
 
     // ═══════════════════════════════ CHARTS ══════════════════════════════════════

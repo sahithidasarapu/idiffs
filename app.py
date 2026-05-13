@@ -1355,7 +1355,7 @@ def _expert_system_response(msg, sid=None):
             import google.generativeai as genai
             genai.configure(api_key=api_key)
 
-            system_instruction = "You are a Cyber Forensic AI. Provide brief, dynamically generated analysis for every query. Structure: 1. ANALYSIS: A short, specific explanation of the problem. 2. SOLUTION: Actionable, concise steps. 3. REDIRECTIONS: [GOTO:module] or [CALL:1930]. Output clean HTML (<strong>, <ul>, <li>, <br>). No generic fallback text allowed; be specific to the user's data."
+            system_instruction = "You are a Cyber Forensic AI expert for the IDIFFS platform. For EVERY query, you MUST follow this exact structure: 1. PROBLEM EXPLANATION: Start with <strong>Problem:</strong> and explain what the issue/threat is in 2-3 clear sentences so the user understands the risk. 2. SOLUTION: Follow with <strong>Solution:</strong> and provide specific, actionable steps as a numbered or bulleted list. 3. REDIRECTIONS: End with relevant redirection tags like [GOTO:module_name] and/or [CALL:1930]. Always include at least one redirection. Output clean HTML (<strong>, <ul>, <li>, <br>). No generic fallback text allowed; be specific to the user's data. Never skip any of these three sections."
 
             # Build context-aware prompt with conversation memory
             context_lines = []
@@ -1375,21 +1375,26 @@ def _expert_system_response(msg, sid=None):
 
 CURRENT USER QUERY: "{msg}"
 
-Create a brief, comprehensive response in pure HTML format. Use this structure exactly:
-<strong>Analysis:</strong> [1-2 sentences explaining the risk clearly]<br><br>
-<strong>Action Plan:</strong>
+Create a comprehensive response in pure HTML format. You MUST follow this EXACT three-part structure:
+
+<strong>🔍 Problem:</strong> [2-3 sentences clearly explaining what the threat/issue is, why it is dangerous, and how it affects the user. Be specific to their query.]<br><br>
+<strong>✅ Solution:</strong>
 <ul>
-<li>[Specific action step 1]</li>
-<li>[Specific action step 2]</li>
+<li>[Specific actionable step 1]</li>
+<li>[Specific actionable step 2]</li>
+<li>[Specific actionable step 3]</li>
 </ul>
 <br>
+<strong>🔗 Next Steps:</strong> Use the tools below to take immediate action.<br>
 [Include ALL relevant redirection tags here, separated by spaces. Example: [GOTO:scam_detector] [GOTO:url_analyzer] [CALL:1930]]
 
-Valid modules for GOTO: system_monitor, url_analyzer, scam_detector, transaction_analyzer, vault, digilocker, report.
-Valid CALL numbers: 1930 (Cyber Crime Helpline).
-
-If the user references previous scans or questions, use the conversation history and session context above to give a relevant follow-up answer.
-Ensure the response is highly informative but readable. NEVER use markdown asterisks. Only use standard HTML tags. Do not output ```html blocks.
+IMPORTANT RULES:
+- Valid modules for GOTO: system_monitor, url_analyzer, scam_detector, transaction_analyzer, vault, digilocker, report.
+- Valid CALL numbers: 1930 (Cyber Crime Helpline).
+- ALWAYS include at least one [GOTO:module] tag so the user can navigate to a relevant tool.
+- If the query involves financial fraud, ALWAYS include [CALL:1930].
+- If the user references previous scans or questions, use the conversation history and session context above to give a relevant follow-up answer.
+- Ensure the response is highly informative but readable. NEVER use markdown asterisks. Only use standard HTML tags. Do not output ```html blocks.
 """
             # Try models in order of preference (higher free-tier quota first)
             models_to_try = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
@@ -1427,31 +1432,43 @@ def _builtin_forensic_expert(msg):
     # Knowledge base: keyword -> (response HTML, goto_tags)
     knowledge = [
         (['phishing', 'fake website', 'fake site', 'fake link', 'spoof'],
-         '<strong>ANALYSIS:</strong> Fake link designed to steal credentials.<br><br>'
-         '<strong>SOLUTION:</strong><ul>'
-         '<li>Do not click. Scan with URL Analyzer.</li>'
-         '<li>Change passwords if already clicked.</li></ul>',
+         '<strong>🔍 Problem:</strong> Phishing is a fraudulent technique where attackers create fake websites that look identical to real ones (like your bank or email provider). When you enter your login credentials on these fake pages, the attackers steal your username, password, and personal data.<br><br>'
+         '<strong>✅ Solution:</strong><ul>'
+         '<li>Do NOT click on any suspicious links — paste them in the URL Analyzer below to scan first</li>'
+         '<li>If you already entered credentials, immediately change your passwords on the real website</li>'
+         '<li>Enable Two-Factor Authentication (2FA) on all important accounts</li>'
+         '<li>Report the fake URL at cybercrime.gov.in</li></ul>'
+         '<br><strong>🔗 Next Steps:</strong> Use the tools below to take immediate action.<br>',
          '[GOTO:url_analyzer] [CALL:1930]'),
 
         (['otp', 'one time password', 'verification code'],
-         '<strong>ANALYSIS:</strong> OTP theft allows scammers to drain bank accounts.<br><br>'
-         '<strong>SOLUTION:</strong><ul>'
-         '<li>Never share OTP with anyone.</li>'
-         '<li>Block accounts if shared.</li></ul>',
+         '<strong>🔍 Problem:</strong> OTP (One Time Password) theft is one of the most common cyber fraud methods in India. Scammers call pretending to be bank officials or delivery agents, and trick you into sharing your OTP. Once they have it, they can drain your bank account, make unauthorized transactions, or hijack your accounts.<br><br>'
+         '<strong>✅ Solution:</strong><ul>'
+         '<li>NEVER share your OTP with anyone — banks, UPI apps, and government agencies will NEVER ask for it</li>'
+         '<li>If you shared an OTP, immediately block your bank account by calling your bank customer care</li>'
+         '<li>File a complaint at cybercrime.gov.in within the golden 24-hour window</li>'
+         '<li>Check your bank statement for unauthorized transactions</li></ul>'
+         '<br><strong>🔗 Next Steps:</strong> Use the tools below to take immediate action.<br>',
          '[GOTO:scam_detector] [CALL:1930]'),
 
         (['upi', 'google pay', 'phonepe', 'paytm', 'bhim', 'gpay'],
-         '<strong>ANALYSIS:</strong> Fraudulent collect requests or PIN theft.<br><br>'
-         '<strong>SOLUTION:</strong><ul>'
-         '<li>PIN only needed to SEND money, never to RECEIVE.</li>'
-         '<li>Reject unknown requests.</li></ul>',
+         '<strong>🔍 Problem:</strong> UPI fraud involves scammers sending fake "collect" requests or tricking you into entering your PIN. Remember: you only need to enter your UPI PIN to SEND money, never to RECEIVE it. Scammers may impersonate buyers, lottery agents, or even bank officials to steal your money.<br><br>'
+         '<strong>✅ Solution:</strong><ul>'
+         '<li>Never enter your UPI PIN to "receive" money — PIN is only needed to SEND</li>'
+         '<li>Reject all unknown collect requests on GPay, PhonePe, Paytm</li>'
+         '<li>Verify the sender\'s identity before making any payment</li>'
+         '<li>If money was stolen, call 1930 immediately — the first 24 hours are critical for recovery</li></ul>'
+         '<br><strong>🔗 Next Steps:</strong> Use the tools below to take immediate action.<br>',
          '[GOTO:transaction_analyzer] [CALL:1930]'),
 
         (['scam', 'fraud', 'suspicious message', 'spam', 'fake sms', 'fake call'],
-         '<strong>ANALYSIS:</strong> Deceptive text used to steal data or money.<br><br>'
-         '<strong>SOLUTION:</strong><ul>'
-         '<li>Paste in Scam Detector for analysis.</li>'
-         '<li>Block sender and report to 1930.</li></ul>',
+         '<strong>🔍 Problem:</strong> Scam messages use social engineering techniques like urgency, fear, and impersonation to trick you into clicking malicious links or sharing personal information. These messages may claim your account will be blocked, you\'ve won a prize, or a delivery is pending — all designed to steal your data or money.<br><br>'
+         '<strong>✅ Solution:</strong><ul>'
+         '<li>Paste the suspicious message in our Scam Detector for AI-powered NLP analysis</li>'
+         '<li>Block the sender and report the number</li>'
+         '<li>Never click links in unsolicited messages</li>'
+         '<li>Report to cybercrime.gov.in or call 1930</li></ul>'
+         '<br><strong>🔗 Next Steps:</strong> Use the tools below to take immediate action.<br>',
          '[GOTO:scam_detector] [CALL:1930]'),
 
         (['ransomware', 'malware', 'virus', 'hack', 'hacked', 'encrypt'],
@@ -1587,16 +1604,16 @@ def _builtin_forensic_expert(msg):
 
     # Default response for unmatched queries
     return (
-        '<strong>Analysis:</strong> I understand your concern. Let me guide you to the right resource.<br><br>'
-        '<strong>Here is what I can help with:</strong><ul>'
-        '<li><strong>Suspicious URL?</strong> — Use our URL Threat Analyzer to scan it</li>'
-        '<li><strong>Got a scam message?</strong> — Paste it in the Scam Detector for NLP analysis</li>'
-        '<li><strong>Unusual bank transactions?</strong> — Upload your statement to the Transaction Engine</li>'
-        '<li><strong>Identity protection?</strong> — Store documents securely in the Identity Vault</li>'
+        '<strong>🔍 Problem:</strong> I understand your concern. Let me guide you to the right resource on our platform to help you investigate and resolve this issue.<br><br>'
+        '<strong>✅ Solution:</strong> Based on your query, here are the tools that can help:<ul>'
+        '<li><strong>Suspicious URL?</strong> — Use our URL Threat Analyzer to scan it for phishing signals</li>'
+        '<li><strong>Got a scam message?</strong> — Paste it in the Scam Detector for AI-powered NLP analysis</li>'
+        '<li><strong>Unusual bank transactions?</strong> — Upload your statement to the Transaction Anomaly Engine</li>'
+        '<li><strong>Identity protection?</strong> — Store documents securely in the encrypted Identity Vault</li>'
         '<li><strong>Need to report a crime?</strong> — Call 1930 or file at cybercrime.gov.in</li></ul><br>'
-        '<strong>Tip:</strong> Try asking about specific topics like "phishing", "OTP safety", "UPI fraud", '
-        '"ransomware", "Aadhaar protection", or "how to report cyber crime".<br><br>'
-        '[GOTO:report] [CALL:1930]'
+        '<strong>🔗 Next Steps:</strong> Try asking about specific topics like "phishing", "OTP safety", "UPI fraud", '
+        '"ransomware", "Aadhaar protection", or "how to report cyber crime". Use the buttons below to navigate directly.<br><br>'
+        '[GOTO:url_analyzer] [GOTO:scam_detector] [GOTO:report] [CALL:1930]'
     )
 
 # ─── Enhancement 2: AI-POWERED SMS TRIAGE ────────────────────────────────────
@@ -1709,12 +1726,13 @@ def api_voice_command():
     elif 'high severity' in command or 'critical' in command or 'alerts' in command:
         result = {'action': 'navigate', 'target': 'dashboard', 'filter': 'high', 
                   'message': 'Showing high severity events'}
-    elif 'report' in command or 'generate' in command:
+    elif 'report' in command or 'generate report' in command:
         result = {'action': 'navigate', 'target': 'report', 'message': 'Opening report generator'}
-    elif any(w in command for w in ['scam', 'phishing', 'fraud']):
-        result = {'action': 'navigate', 'target': 'scam', 'message': 'Opening Scam Detector'}
     elif 'monitor' in command or 'network' in command:
         result = {'action': 'navigate', 'target': 'monitor', 'message': 'Opening System Monitor'}
+    else:
+        # For all other queries, return 'none' so frontend falls through to AI chat
+        result = {'action': 'none', 'message': ''}
     
     log_forensic_event('VOICE_AI', 'VOICE_COMMAND', 1, f'Voice: {command[:40]} -> {result["action"]}')
     return jsonify(result)
